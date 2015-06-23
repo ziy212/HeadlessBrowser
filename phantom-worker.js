@@ -11,40 +11,12 @@ maxBrowserInstance = 1;
 userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0";
 timeout = 5000;
 
-/* Running listening service */
-service = server.listen(listenPort, function (request, response) {
-    var payload, error;
-    console.log('Request received at ' + new Date());
-
-    response.headers = {
-        'Cache': 'no-cache',
-        'Content-Type': 'text/plain;charset=utf-8'
-    };
-    try {
-        payload = JSON.parse(request.postRaw);
-        if (! payload.job ) {
-          error = new Error();
-          error.name = "BadJobError";
-          throw error;
-        }
-        if (payload.job.toLowerCase() === "open"){
-          //browsingHandler(payload.url);
-        }
-        response.statusCode = 200;
-        response.write("received: "+JSON.stringify(payload, null, 4));
-    }
-    catch (e) {
-        response.statusCode = 400;
-        response.write("bad request: "+e.name);
-    }
-    response.close();
-});
-console.log("PhantomJS listens request on port "+listenPort);
 
 /* Task Manager */
 var taskManager = (function (){
   var max_instances, user_agent,
-    running_instances = 0, task_queue = new queue(),
+    task_queue = new queue(),
+    page = null;
     configure, post_task, start_tasks, timeout,
     open_url, open_url_callback;
 
@@ -60,16 +32,13 @@ var taskManager = (function (){
     start_tasks();
   };
 
-  //this callback decreases running_instances
   open_url_callback = function (result) {
     var content;
-    running_instances--;
     try{
       if (result.status !== 'success') {
         console.log('[FAIL] to load the address:'+result.url);
       }
       else {
-        
         content = result.content;
         console.log("[SUCCEED] to load the address: " + result.url +
         " contnet-size: "+result.content.length,
@@ -142,9 +111,8 @@ var taskManager = (function (){
   start_tasks = function () {
     var task;
     while (task_queue.getLength() > 0){
-      if (running_instances < max_instances) {
+      if (page === null) {
         task = task_queue.dequeue();
-        running_instances++;
         open_url(task.url);
       }
       else {
