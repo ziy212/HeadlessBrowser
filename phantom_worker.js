@@ -4,13 +4,14 @@ var queue = require('./Queue'),
   /* parameters */
   address, times, index,
   /* settings */
-  userAgent, timeout,
+  defaultUserAgent, userAgent, defaultTimeout, timeout,
   /* utilities */
   waitForTaskFinish, displayObject;
 
 /* Settings */
-userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0";
-timeout = 5000;
+defaultUserAgent = 
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0";
+defaultTimeout = 5000;
 
 /* Task Worker */
 taskWorker = (function (){
@@ -83,9 +84,6 @@ taskWorker = (function (){
     };
 
     page.onResourceTimeout = function (e) {
-      //console.log(e.errorCode);   // it'll probably be 408 
-      //console.log(e.errorString); // it'll probably be 'Network timeout on resource'
-      //console.log(e.url);         // the url whose request timed out
       timeout_count++;
     };
 
@@ -178,13 +176,25 @@ waitForTaskFinish = function(count) {
 };
 
 /* main */
-var address, times, index;
-if (system.args.length !== 3) {
-  console.log("usage: phantom-worker.js url times");
+if (system.args.length < 3) {
+  console.log(
+    "usage: phantom-worker.js url times timeout-for-one-req userAgent");
 }
 else {
   address = system.args[1];
   times = parseInt(system.args[2]);
+  if (system.args.length >3 ){
+    timeout = parseInt(system.args[3]);
+  }
+  else {
+    timeout = defaultTimeout;
+  }
+  if (system.args.length > 4){
+    userAgent = system.args[4];
+  }
+  else {
+    userAgent = defaultTimeout;
+  }
   console.log("[MAIN] browsing "+address+" for "+times);
   taskWorker.configure({
     timeout : timeout,
