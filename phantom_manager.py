@@ -19,7 +19,7 @@ class Manager(threading.Thread):
         self.__timeout = timeout
         self.__user_agent = user_agent
         self.__workers = []
-        self.__log_dir = []
+        self.__log_dir = log_dir
         self.__total_worker_instances = 1
         self.__worker_script_path = worker_script_path
 
@@ -41,6 +41,7 @@ class Manager(threading.Thread):
                 args, 
                 stdout=open(os.path.join(full_path_name, 'stdout.txt'), 'w'),
                 stderr=open(os.path.join(self.directory, 'stderr.txt'), 'w'))
+            # [starting_time, url, times, popen-obj]
             worker_info = (int(time.time()),task.url, task.times, worker)
             time.sleep(1)
 
@@ -51,3 +52,43 @@ class Manager(threading.Thread):
                 ", full_path:" + full_path_name)
         except Exception as e:
             logger.error("failed to launch worker "+str(e))
+
+    def run(self):
+        while True:
+            try:
+                # check dead process
+                now = int(time.time())
+                
+                while True:
+                    index = 0
+                    for worker in self.__workers:
+                        starting_time = worker[0]
+                        proc = worker[3]
+                        if now - starting_time > self.__timeout:
+                            logger.info("[MAIN] TIMEOUT worker[%d] %s pid:%d" 
+                                % (index, worker[1], worker[3].pid) )
+                            self.kill_process(worker[3].pid)
+                            break
+                        else:
+                            code = proc.poll()
+                            if code <= 0:
+                                logger.info("[MAIN] EXIT worker[%d] %s pid:%d" 
+                                    % (index, worker[1], worker[3].pid) )
+                                self.kill_process(worker[3].pid)
+                                break
+                        index += 1
+                    if index >= len(self.__workers):
+                        logger.info("[MAIN] all %d workers are in processing" 
+                            % len(self.__workers))
+                        break
+                    logger.info("[MAIN] worker[%d] %s finished its job, kill it" 
+                            % (index, self.__workers[index][1]) )
+                    del self.__workers[index] 
+
+            except Exception as e:
+                logger.error(
+                    "failed to start task, repeat in 2s: "+str(e))        
+
+
+
+
