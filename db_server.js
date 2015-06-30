@@ -49,7 +49,7 @@ app.post('/api/web-contents/store', function (req, res) {
 	  	contents : contents
 	  }, function (err, doc) {
 	    if (err) {
-	        console.log("[FAIL] failed to insert into DB");
+	        console.log("[FAIL] failed to insert into DB: "+url);
 	    }
 	    else {
 	        console.log("[SUCC] inserted into DB");
