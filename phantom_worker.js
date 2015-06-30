@@ -13,11 +13,18 @@ defaultUserAgent =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0";
 defaultTimeout = 5000;
 
+function b64EncodeUnicode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
 /* Task Worker */
 taskWorker = (function (){
-  var user_agent, timeout,
+  var user_agent, timeout, current_url,
     task_queue = new queue(), page = null,
-    fin_task_count = 0, error_tag = false,
+    fin_task_count = 0, err_task_count = 0,
+    error_tag = false,
     configure, post_task, start_tasks, 
     open_url, open_url_callback,
     get_remaining_task_count, get_fin_task_count, get_error_tag;
@@ -44,19 +51,68 @@ taskWorker = (function (){
         ", failed objects: "+ result.failed_obj_count,
         ", landing-page: "+result.landing_page);
         //console.log(result.content);
+        send_contents(current_url, result.content)
       }
     }
     catch (err) {
       console.log("[PHANTOM_ERR] error in open_url_callback "+err);
     }
     finally { 
-      fin_task_count++;   
+      //fin_task_count++;   
       if (task_queue.getLength() > 0) {
         //make sure the page is null!
         console.log("[INFO] Start next task, "+task_queue.getLength()+" left");
         start_tasks();
       }
     }
+  };
+
+  send_contents = function (url, contents) {
+    var db_listener = "http://localhost:4040/api/web-contents/store",
+      sender, error = null, 
+      json_header, encoded_contents, data;
+    sender = require('webpage').create();
+    sender.settings.resourceTimeout = 5000;
+    sender.settings.userAgent = user_agent; 
+
+    sender.onResourceTimeout = function (e) {
+      error = "timeout";
+    };
+
+    console.log("[INFO] sending contents to DB: "+contents.length);
+    encoded_contents = b64EncodeUnicode(contents);
+    data = '{"url":"' + encodeURIComponent(url) +'", "contents":"'+encoded_contents+'"}';
+    console.log("[DEBUG] "+encoded_contents.length);
+    json_header = { "Content-Type": "application/json" };
+    try{
+      sender.open(db_listener, 'post', data, json_header,
+       function (status) {
+        //page.render('github.png');
+        content = page.content.slice(0);
+        sender.close();
+        sender = null;
+        
+        if (status !== 'success'){
+          err_task_count++;
+          console.log("[FAIL] failed to send contents to DB; failed cases "+err_task_count);
+        }
+        else if (error) {
+          err_task_count++;
+          console.log("[FAIL] failed to send contents to DB; failed cases "+err_task_count);
+        }
+        console.log("[SUCCEED] sent contents ["+contents.length+"] to db");
+        //
+      });
+    }
+    catch (err) {
+      console.log("[PHANTOM_ERR] error sending contents to db "+err);
+      sender.close();
+      page = null;
+      error_tag = true;
+    }
+    finally {
+      fin_task_count++;
+    } 
   };
 
   //this method creates and closes the page instance
@@ -119,6 +175,7 @@ taskWorker = (function (){
     var task;
     if (task_queue.getLength()>0 && page === null) {
         task = task_queue.dequeue();
+        current_url = task.url;
         open_url(task.url);
     }
     else {
