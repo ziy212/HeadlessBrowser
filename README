@@ -1,0 +1,7 @@
+1. start mongodb, create db: webcontents
+2. prepare.sh #install prerequsites
+3. nodemon db_server.js 
+4. python 
+
+
+notes: ps aux | grep "python" | grep -v "grep"| awk '{print $2}'  | xargs kill -9
