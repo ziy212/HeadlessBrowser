@@ -52,7 +52,7 @@ app.post('/api/web-contents/store', function (req, res) {
 	        console.log("[FAIL] failed to insert into DB: "+url);
 	    }
 	    else {
-	        console.log("[SUCC] inserted into DB");
+	        console.log("[SUCC] inserted into DB "+url);
 	    }} );
   }
   catch (e) {
