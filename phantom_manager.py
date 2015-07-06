@@ -187,14 +187,14 @@ class KodeFunHTTPRequestHandler(BaseHTTPRequestHandler):
 
 def main():
     queue = Queue.Queue()
-    queue.put(Task("http://www.google.com",10))
-    #queue.put(Task("http://www.sina.com.cn",10))
+    #queue.put(Task("http://www.google.com",10))
+    queue.put(Task("http://www.sina.com.cn",10))
     #queue.put(Task("http://www.qq.com",10))
-    #queue.put(Task("http://www.weibo.com",10))
-    #queue.put(Task("http://www.wsj.com",10))
+    queue.put(Task("http://www.weibo.com",10))
+    queue.put(Task("http://www.wsj.com",10))
     #queue.put(Task("http://www.baidu.com",10))
     #queue.put(Task("https://en.wikipedia.org/wiki/Main_Page",10))
-    #queue.put(Task("http://www.yahoo.com",10))
+    queue.put(Task("http://www.yahoo.com",10))
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0"
     log_dir = "/Users/xpan/Documents/projects/browser/logs"
     worker_script_path = "/Users/xpan/Documents/projects/browser/phantom_worker.js"

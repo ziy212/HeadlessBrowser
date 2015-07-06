@@ -3,6 +3,8 @@ from urlparse import urlparse
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
 
+SCRIPT_COST = 20
+
 class Node:
 	def __init__(self, tag):
 		self.tag = tag.lower()
@@ -148,19 +150,19 @@ def costUpdate(src_node, dst_node):
 	if src_node == dst_node:
 		return 0
 	elif src_node.tag == "script" or dst_node.tag == "script":
-		return 50
+		return SCRIPT_COST
 	else:
 		return 1
 
 def costInsert(node):
 	if node.tag == "script":
-		return 50
+		return SCRIPT_COST
 	else:
 		return 1
 
 def costDelete(node):
 	if node.tag == "script":
-		return 50
+		return SCRIPT_COST
 	else:
 		return 1
 
@@ -191,7 +193,9 @@ def mmdiff(src_ld, dst_ld):
 	print "Least cost %d " %D[M-1][N-1]
 	return D
 
-def mmdiffR(src_ld, dst_ld, D):
+def mmdiffR(src_ld, dst_ld, D, \
+	src_script_hosts, src_script_contents, \
+	dst_script_hosts, dst_script_contents):
 	M = len(src_ld) #[1 ... M-1]
 	N = len(dst_ld) #[1 ... N-1]
 	i = M - 1
@@ -261,14 +265,24 @@ def mmdiffR(src_ld, dst_ld, D):
 	#print "delete hosts"
 	cost = 0
 	for item in del_scripts_hosts:
-		if item in ins_scripts_hosts:
-			cost += 50
+		if item in dst_script_hosts:
+			cost += (SCRIPT_COST-1)
 		#print item
 	for item in del_scripts_contents:
-		for other in ins_scripts_contents:
+		for other in dst_script_contents:
 			if compare_two_string(item, other):
-				cost += 50
+				cost += (SCRIPT_COST-1)
 				break
+	for item in ins_scripts_hosts:
+		if item in src_script_hosts:
+			cost += (SCRIPT_COST-1)
+		#print item
+	for item in ins_scripts_contents:
+		for other in src_script_contents:
+			if compare_two_string(item, other):
+				cost += (SCRIPT_COST-1)
+				break
+
 	print "inserted hosts scripts: %d" % len(ins_scripts_hosts)
 	print "deleted hosts scripts: %d" % len(del_scripts_hosts)
 	print "inserted hosts contents: %d" % len(ins_scripts_contents)
@@ -294,27 +308,50 @@ def mmdiffR(src_ld, dst_ld, D):
 	print "Final cost: %f[%f]" %(rs/norm, D[M-1][N-1]/norm)
 	return rs
 
-def getLDPairReprHelper(root, result):
+def getLDPairReprHelper(root, result, script_hosts, script_contents):
 	result.append(root)
+	if root.tag == "script":
+		if root.src != "None":
+			script_hosts.add(root.src)
+		elif root.val != "":
+			script_contents.add(root.val)
+
 	for child in root.children:
-		getLDPairReprHelper(child, result)
+		getLDPairReprHelper(child, result, script_hosts, script_contents)
 
 def getLDPairRepr(root):
 	result = [None]
-	getLDPairReprHelper(root, result)
-	return result
+	script_hosts = set()
+	script_contents = set()
+	getLDPairReprHelper(root, result, script_hosts, script_contents)
+	return result, script_hosts, script_contents
 
 def calcTwoHTMLDistance(dom1_path, dom2_path):
-	soup1 = BeautifulSoup(open(dom1_path), "html5lib")
-	soup2 = BeautifulSoup(open(dom2_path), "html5lib")
+	try:
+		soup1 = BeautifulSoup(open(dom1_path), "html5lib")
+	except Exception as e:
+		print "Error parsing DOM using html5 ",str(e)
+		contents = open(dom1_path).read()
+		soup1 = BeautifulSoup(contents.decode('utf-8'), "html5lib")
+	
+	try:
+		soup2 = BeautifulSoup(open(dom2_path), "html5lib")
+	except Exception as e:
+		print "Error parsing DOM using html5 ", str(e)
+		contents = open(dom2_path).read()
+		soup2 = BeautifulSoup(contents.decode('utf-8'), "html5lib")
+
 	node1 = Node("doc")
 	node2 = Node("doc")
 	traverseDOMTree(soup1.html,node1, 0)
 	traverseDOMTree(soup2.html,node2, 0)
-	ld1 = getLDPairRepr(node1)
-	ld2 = getLDPairRepr(node2)
+	ld1, ld1_script_hosts, ld1_script_contents = getLDPairRepr(node1)
+	ld2, ld2_script_hosts, ld2_script_contents = getLDPairRepr(node2)
+	print "script length for ld1: %d %d " % (len(ld1_script_hosts),len(ld1_script_contents))
+	print "script length for ld2: %d %d " % (len(ld2_script_hosts),len(ld2_script_contents))
 	D = mmdiff(ld1, ld2)
-	return mmdiffR(ld1, ld2, D)
+	return mmdiffR(ld1, ld2, D, \
+		ld1_script_hosts,ld1_script_contents, ld2_script_hosts, ld2_script_contents)
 #################STRING##########################
 
 def longest_common_substring(s1, s2):
