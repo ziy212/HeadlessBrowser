@@ -3,6 +3,8 @@ import urllib2
 import urllib
 import sys
 import base64
+import os
+import urlparse
 
 def fetchURLContents(url):
     try:
@@ -31,9 +33,18 @@ def fetchURLContents(url):
         return None
 
 rs = fetchURLContents(sys.argv[1])
+o = urlparse.urlparse(sys.argv[1])
+dir_name = o.path.replace('/','_')
+#if dir_name.startswith('_'):
+#    dir_name[1] = 'P'
+path = os.path.join('./tmp',dir_name)
+if not os.path.exists(path):
+    os.makedirs(path)
+
 count = 1
 for item in rs:
-    f = open('tmp/tmp_%d'%count,'w')
+    file_path = os.path.join(path,'%d.txt'%count)
+    f = open(file_path,'w')
     f.write(item+'\n')
     f.close()
     count += 1

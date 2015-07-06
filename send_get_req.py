@@ -8,9 +8,19 @@ def sendTask(url, times):
 	url_par = urllib.quote(url)
 	times_par = int(times)
 	url = template%(url_par,times_par)
-	print url
+	#print url
 	response = urllib2.urlopen(url)
-	the_page = response.read()
-	print the_page
+	response_contents = response.read()
+	print response_contents
+	print ""
 
-sendTask(sys.argv[1],sys.argv[2])
+#sendTask(sys.argv[1],sys.argv[2])
+
+def sendTaskFromFile(file_name):
+	f = open(file_name)
+	for line in f:
+		url = line.strip()
+		print "post task : url %s , times %d" %(url, 2)
+		sendTask(url,2)
+
+sendTaskFromFile(sys.argv[1])
