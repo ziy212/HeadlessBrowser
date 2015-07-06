@@ -1,4 +1,4 @@
-import sys, re,  distance,  editdistance
+import sys, re,  distance,  editdistance, json
 from urlparse import urlparse
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
@@ -29,7 +29,7 @@ class Node:
 		if self.val != "":
 			rs += " val:%s " % self.val.strip()
 		if self.data_reactid != 'None':
-			rs += " data-reactid:%s" % self.data-reactid.strip()
+			rs += " data-reactid:%s" % self.data_reactid.strip()
 		try:
 			return rs.encode('utf-8')
 		except UnicodeEncodeError as e:
@@ -55,6 +55,23 @@ class Node:
 				return False
 			else: # both src are None
 				#print "DEBUG: compare two internal scripts"
+				if 'json' in self.tp and 'json' in other.tp:
+					try:
+						#print "JSON: %s " %self.val
+						obj1 = json.loads(self.val)
+						keys1 = set(obj1.keys())
+						obj2 = json.loads(other.val)
+						keys2 = set(obj2.keys())
+						intersect = keys1.intersection(keys2)
+						if len(intersect) >= 2 and \
+							len(intersect) > len(keys1)/2:
+							#print "RESULT: TRUE"
+							return True
+						else:
+							#print "RESULT FALSE %d %d %d" %(len(intersect), len(keys1), len(keys2))
+							return False
+					except Exception as e:
+						print "failed parse JSON: %s " %str(e)
 				return compare_two_string(self.val, other.val)
 
 		if self.tag == "link":
@@ -131,19 +148,19 @@ def costUpdate(src_node, dst_node):
 	if src_node == dst_node:
 		return 0
 	elif src_node.tag == "script" or dst_node.tag == "script":
-		return 20
+		return 50
 	else:
 		return 1
 
 def costInsert(node):
 	if node.tag == "script":
-		return 20
+		return 50
 	else:
 		return 1
 
 def costDelete(node):
 	if node.tag == "script":
-		return 20
+		return 50
 	else:
 		return 1
 
@@ -152,7 +169,7 @@ def mmdiff(src_ld, dst_ld):
 	M = len(src_ld) #1 + lenth of src_ld
 	N = len(dst_ld)
 	D = [[0 for x in range(N)] for x in range(M)] 
-	print "pair1: %d, pair2: %d DY: %d DX: %d" %(M, N, len(D), len(D[0]))
+	print "src ld length: %d, dst ld length: %d" %(M, N)
 	for i in range(1, M):
 		D[i][0] = D[i-1][0] + costDelete(src_ld[i])
 
@@ -179,22 +196,50 @@ def mmdiffR(src_ld, dst_ld, D):
 	N = len(dst_ld) #[1 ... N-1]
 	i = M - 1
 	j = N - 1
+	ins_scripts_hosts = set()
+	del_scripts_hosts = set()
+
+	ins_scripts_contents = set()
+	del_scripts_contents = set()
+	updated_scripts_count = 0
+
 	while i >0 and j > 0:
 		if (D[i][j] == D[i-1][j] + costDelete(src_ld[i])) and \
 			(j == N-1 or dst_ld[j+1].level <= src_ld[i].level ):
-			print "DEL:",src_ld[i].tag
+			#print "DEL:",src_ld[i].tag
+			if src_ld[i].tag == "script":
+				if src_ld[i].src != 'None':
+					del_scripts_hosts.add(src_ld[i].src)
+				elif src_ld[i].val != "":
+					del_scripts_contents.add(src_ld[i].val)
+				try:
+					print "  DEL:%s" % src_ld[i].toString().replace('\n','\t')
+				except Exception as e:
+					print "  Error displaying contents: ",str(e)
 			i = i - 1
 		elif (D[i][j] == D[i][j-1] + costInsert(dst_ld[j])) and \
 			(i == M-1 or src_ld[i+1].level <= dst_ld[j].level):
-			print "INS:",dst_ld[j].tag
+			#print "INS:",dst_ld[j].tag
+			if dst_ld[j].tag == "script":
+				if dst_ld[j].src != 'None':
+					ins_scripts_hosts.add(dst_ld[j].src)
+				elif dst_ld[j].val != "":
+					ins_scripts_contents.add(dst_ld[j].val)
+				try:	
+					print "  INS:%s" % dst_ld[j].toString().replace('\n','\t')
+				except Exception as e:
+					print "  Error displaying contents: ",str(e)
 			j = j - 1
 		elif not src_ld[i] == dst_ld[j]:
-			print "UPD: %s => %s " % (src_ld[i].tag, dst_ld[j].tag)
+			#print "UPD: %s => %s " % (src_ld[i].tag, dst_ld[j].tag)
 			if src_ld[i].tag == "script" and dst_ld[j].tag == "script":
-				print "SRC:",src_ld[i].toString()
-				print "DST:",dst_ld[j].toString()
-				print compare_two_string(src_ld[i].val, dst_ld[j].val)
-				print "END"
+				updated_scripts_count += 1
+				try:
+					print "  REPLACE SRC:",src_ld[i].toString().replace('\n','\t')
+					print "          DST:",dst_ld[j].toString().replace('\n','\t')
+					print "           RS:",compare_two_string(src_ld[i].val, dst_ld[j].val), "END"
+				except Exception as e:
+					print "  Error displaying contents: ",str(e)
 			i = i - 1
 			j = j - 1
 		else:
@@ -209,6 +254,46 @@ def mmdiffR(src_ld, dst_ld, D):
 		print "INS:",dst_ld[j].tag
 		j = j - 1
 
+	
+	#print "insert hosts:"
+	#for item in ins_scripts_hosts:
+	#	print item
+	#print "delete hosts"
+	cost = 0
+	for item in del_scripts_hosts:
+		if item in ins_scripts_hosts:
+			cost += 50
+		#print item
+	for item in del_scripts_contents:
+		for other in ins_scripts_contents:
+			if compare_two_string(item, other):
+				cost += 50
+				break
+	print "inserted hosts scripts: %d" % len(ins_scripts_hosts)
+	print "deleted hosts scripts: %d" % len(del_scripts_hosts)
+	print "inserted hosts contents: %d" % len(ins_scripts_contents)
+	print "deleted hosts contents: %d" % len(del_scripts_contents)
+	print "updated scripts: %d" % updated_scripts_count
+
+	'''
+	print "insert contents:"
+	for item in ins_scripts_contents:
+		try:
+			print item
+		except Exception as e:
+			print "Error: ",str(e)
+	print "delete contentes:"
+	for item in del_scripts_contents:
+		try:
+			print item
+		except Exception as e:
+			print "Error: ",str(e)
+	'''
+	rs = float(D[M-1][N-1] - cost)
+	norm = float(M + N)
+	print "Final cost: %f[%f]" %(rs/norm, D[M-1][N-1]/norm)
+	return rs
+
 def getLDPairReprHelper(root, result):
 	result.append(root)
 	for child in root.children:
@@ -219,6 +304,17 @@ def getLDPairRepr(root):
 	getLDPairReprHelper(root, result)
 	return result
 
+def calcTwoHTMLDistance(dom1_path, dom2_path):
+	soup1 = BeautifulSoup(open(dom1_path), "html5lib")
+	soup2 = BeautifulSoup(open(dom2_path), "html5lib")
+	node1 = Node("doc")
+	node2 = Node("doc")
+	traverseDOMTree(soup1.html,node1, 0)
+	traverseDOMTree(soup2.html,node2, 0)
+	ld1 = getLDPairRepr(node1)
+	ld2 = getLDPairRepr(node2)
+	D = mmdiff(ld1, ld2)
+	return mmdiffR(ld1, ld2, D)
 #################STRING##########################
 
 def longest_common_substring(s1, s2):
@@ -247,32 +343,30 @@ def similar_strings(s1, s2, threthold):
 		new_s1 = s1
 	length = len(new_s1)
 	hamming = distance.hamming(new_s1,new_s2,normalized=True)
-	print "hamming %f, threthold: %f" %(hamming, threthold)
+	#print "hamming %f, threthold: %f" %(hamming, threthold)
 	if hamming < 1 - threthold:
 		return True
 
-	print "c1alculating levenshtein ...length: %d vs %d " %(len(s1), len(s2))
+	#print "c1alculating levenshtein ...length: %d vs %d " %(len(s1), len(s2))
 	
 	integer_threthold = 0
 	if min(len(s1), len(s2)) > 15000:
 		s1_arr = re.split('[;,]',s1)
 		s2_arr = re.split('[;,]',s2)
-		print "using fast levenshtein algorithm: s1-len:%d s2-len:%d" \
-			%(len(s1_arr), len(s2_arr))
+		#print "using fast levenshtein algorithm: s1-len:%d s2-len:%d" \
+		#	%(len(s1_arr), len(s2_arr))
 		levenshtein = editdistance.eval(s1_arr, s2_arr)
 		integer_threthold = min(len(s1_arr), len(s2_arr)) * (1 - threthold)
 	else:
-		print "using standard levenshtein algorithm"
+		#print "using standard levenshtein algorithm"
 		levenshtein = editdistance.eval(s1, s2)
 		integer_threthold = min(len(s1), len(s2)) * (1 - threthold)
-	print "result levenshtein %d vs threthold %d " %(levenshtein,integer_threthold)
+	#print "result levenshtein %d vs threthold %d " %(levenshtein,integer_threthold)
 	if levenshtein <= integer_threthold:
 		return True
 	else:
 		return False
 	
-
-	print "Done ",str(levenshtein)
 	#jaccard = distance.jaccard(s1,s2)
 	#print str(jaccard)
 	
@@ -315,16 +409,12 @@ def compare_two_string(str1, str2, threthold=0.8):
 
 ##################################################
 
-soup1 = BeautifulSoup(open(sys.argv[1]), "html5lib")
-soup2 = BeautifulSoup(open(sys.argv[2]), "html5lib")
-node1 = Node("doc")
-node2 = Node("doc")
-traverseDOMTree(soup1.html,node1, 0)
-traverseDOMTree(soup2.html,node2, 0)
-ld1 = getLDPairRepr(node1)
-ld2 = getLDPairRepr(node2)
-D = mmdiff(ld1, ld2)
-mmdiffR(ld1, ld2, D)
+def main():
+	calcTwoHTMLDistance(sys.argv[1], sys.argv[2])
+
+if __name__ == "__main__":
+	main()
+
 '''
 print "length: ld1:%d  ld2:%d" %(len(ld1), len(ld2))
 for i in range(min(len(ld1),len(ld2)) ):
