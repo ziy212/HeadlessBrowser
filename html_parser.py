@@ -306,7 +306,7 @@ def mmdiffR(src_ld, dst_ld, D, \
 	rs = float(D[M-1][N-1] - cost)
 	norm = float(M + N)
 	print "Final cost: %f[%f]" %(rs/norm, D[M-1][N-1]/norm)
-	return rs
+	return rs/norm
 
 def getLDPairReprHelper(root, result, script_hosts, script_contents):
 	result.append(root)
@@ -326,20 +326,24 @@ def getLDPairRepr(root):
 	getLDPairReprHelper(root, result, script_hosts, script_contents)
 	return result, script_hosts, script_contents
 
-def calcTwoHTMLDistance(dom1_path, dom2_path):
+def calcTwoHTMLDistanceFromFiles(dom_path1, dom_path2):	
+	contents1 = open(dom1_path).read()
+	contents2 = open(dom2_path).read()
+	calcTwoHTMLDistance(contents1,contents2)
+
+
+def calcTwoHTMLDistance(contents1, contents2):
 	try:
-		soup1 = BeautifulSoup(open(dom1_path), "html5lib")
+		soup1 = BeautifulSoup(contents1, "html5lib")
 	except Exception as e:
 		print "Error parsing DOM using html5 ",str(e)
-		contents = open(dom1_path).read()
-		soup1 = BeautifulSoup(contents.decode('utf-8'), "html5lib")
+		soup1 = BeautifulSoup(contents1.decode('utf-8'), "html5lib")
 	
 	try:
-		soup2 = BeautifulSoup(open(dom2_path), "html5lib")
+		soup2 = BeautifulSoup(contents2, "html5lib")
 	except Exception as e:
 		print "Error parsing DOM using html5 ", str(e)
-		contents = open(dom2_path).read()
-		soup2 = BeautifulSoup(contents.decode('utf-8'), "html5lib")
+		soup2 = BeautifulSoup(contents2.decode('utf-8'), "html5lib")
 
 	node1 = Node("doc")
 	node2 = Node("doc")

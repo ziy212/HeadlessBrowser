@@ -31,6 +31,64 @@ app.use(function(req,res,next){
     next();
 });
 
+app.post('/api/web-contents/distance', function (req, res) {
+	if ( !req.body.url1 || !req.body.url2 || !req.body.score ) {
+		res.json({success : false});
+	}
+	try{
+		var url1 = standardizeURL(req.body.url1);
+  	var url2 = standardizeURL(req.body.url2);
+	  if (url1 === url2 ){
+	  	console.log("[FAIL] URL1 and URL2 are same: "+url1+" "+url2);
+	  	return res.json({
+  			success : false,
+  			message : "TWO_URL_SAME"});
+	  }
+	  if (url1 > url2) {
+	  	var tmp = url1;
+	  	url1 = url2;
+	  	url2 = tmp;
+	  } 
+	  res.json({
+  		success : true,
+  		url1 : url1,
+  		url2 : url2});
+	}
+	catch (e) {
+		res.json({
+  		success : false,
+  		message : e});
+	}
+  
+  try{
+	  var collection = db.get('distance');
+	  collection.insert({
+	  	url1 : url1, url2 : url2, score : score
+	  }, function (err, doc) {
+	    if (err) {
+	        console.log("[FAIL] failed to insert distance into DB: "
+	        	+err+" "+url1," ",url2);
+	    }
+	    else {
+	        console.log("[SUCC] inserted distance into DB: "+url1," ",url2);
+	    }} );
+	  collection.insert({
+	  	url1 : url2, url2 : url1, score : score
+	  }, function (err, doc) {
+	    if (err) {
+	        console.log("[FAIL] failed to insert distance into DB: "
+	        	+err+" "+url1," ",url2);
+	    }
+	    else {
+	        console.log("[SUCC] inserted distance into DB: "+url1," ",url2);
+	    }} );
+  
+  }
+  catch (e) {
+  	console.log("[FAIL] failed to insert distance into DB "+e);
+  }
+});
+
 app.post('/api/web-contents/store', function (req, res) {
 	if ( !req.body.url || !req.body.contents ) {
 		res.json({success : false});
@@ -61,16 +119,23 @@ app.post('/api/web-contents/store', function (req, res) {
 });
 
 app.post('/api/web-contents/fetch', function (req, res){
+	var url, data, index, collection;
 	if ( !req.body.url ) {
 		res.json({success : false});
+		return
 	}
 	try{
-  	var url = standardizeURL(req.body.url);
+		console.log("URL:"+req.body.url)
+		if (req.body.url === "*") {
+			data = {}
+		}
+		else {
+  		url = standardizeURL(req.body.url);
+  		data = {url : url}
+		}
   	console.log("  [DEBUG] fetch contents of url: "+url);
-  	var index;
-	  var collection = db.get('contentscollection');
-	  collection.find({
-	  	url : url}, function (err, docs) {
+	  collection = db.get('contentscollection');
+	  collection.find(data, function (err, docs) {
 	    if (err) {
 	        console.log("[FAIL] failed to fetch contents for "+url);
 	        res.json({
