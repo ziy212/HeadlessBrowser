@@ -194,6 +194,8 @@ def main():
         o = urlparse.urlparse(url)
         paths = o.path.split('/')
         dir_name = paths[-2]
+        if len(dir_name.strip()) == 0:
+            dir_name = o.netloc +'_'+ paths[-1]
         path = os.path.join('./tmp',dir_name)
         if not os.path.exists(path):
             os.makedirs(path)    

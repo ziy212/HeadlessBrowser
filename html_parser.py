@@ -210,7 +210,7 @@ def mmdiffR(src_ld, dst_ld, D, \
 	while i >0 and j > 0:
 		if (D[i][j] == D[i-1][j] + costDelete(src_ld[i])) and \
 			(j == N-1 or dst_ld[j+1].level <= src_ld[i].level ):
-			#print "DEL:",src_ld[i].tag
+			print "DEL:",src_ld[i].tag
 			if src_ld[i].tag == "script":
 				if src_ld[i].src != 'None':
 					del_scripts_hosts.add(src_ld[i].src)
@@ -223,7 +223,7 @@ def mmdiffR(src_ld, dst_ld, D, \
 			i = i - 1
 		elif (D[i][j] == D[i][j-1] + costInsert(dst_ld[j])) and \
 			(i == M-1 or src_ld[i+1].level <= dst_ld[j].level):
-			#print "INS:",dst_ld[j].tag
+			print "INS:",dst_ld[j].tag
 			if dst_ld[j].tag == "script":
 				if dst_ld[j].src != 'None':
 					ins_scripts_hosts.add(dst_ld[j].src)
@@ -235,7 +235,7 @@ def mmdiffR(src_ld, dst_ld, D, \
 					print "  Error displaying contents: ",str(e)
 			j = j - 1
 		elif not src_ld[i] == dst_ld[j]:
-			#print "UPD: %s => %s " % (src_ld[i].tag, dst_ld[j].tag)
+			print "UPD: %s => %s " % (src_ld[i].tag, dst_ld[j].tag)
 			if src_ld[i].tag == "script" and dst_ld[j].tag == "script":
 				updated_scripts_count += 1
 				try:
@@ -357,6 +357,44 @@ def calcTwoHTMLDistance(contents1, contents2):
 	return mmdiffR(ld1, ld2, D, \
 		ld1_script_hosts,ld1_script_contents, ld2_script_hosts, ld2_script_contents)
 
+
+def extractionHelper(root, result, script_hosts, script_contents):
+	#result.append(root)
+	if root.tag == "script":
+		if root.src != "None":
+			script_hosts.add(root.src)
+		elif root.val != "":
+			script_contents.add(root.val)
+
+	for child in root.children:
+		getLDPairReprHelper(child, result, script_hosts, script_contents)
+
+def extractScriptFromDOMTree(root):
+	result = [None]
+	script_hosts = set()
+	script_contents = set()
+	extractionHelper(root, result, script_hosts, script_contents)
+	return script_hosts, script_contents
+
+def extractScriptFromContents(contents):
+	if contents == None or len(contents)==0:
+		return None, None
+	try:
+		soup = BeautifulSoup(contents, "html5lib")
+	except Exception as e:
+		print "Error parsing DOM using html5 ",str(e)
+		soup = BeautifulSoup(contents.decode('utf-8'), "html5lib")
+	node = Node("doc")
+	traverseDOMTree(soup.html,node, 0)
+	script_hosts, script_contents = extractScriptFromDOMTree(node)
+	
+	for host in script_hosts:
+		print "host: %s" %host
+	for content in script_contents:
+		print "content: %s" %content
+	print "summary Host:%d Contents:%d" %(len(script_hosts), len(script_contents))
+
+	return script_hosts, script_contents
 
 #################STRING##########################
 
