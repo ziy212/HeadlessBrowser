@@ -95,6 +95,9 @@ def fetchDistance(url1, url2):
         final_rs = []
         if rs['success']:
             db_result = json.loads(rs['result'])
+            if db_result == None or len(db_result) == 0:
+                print "no distance %s" %(str(db_result))
+                return None
             print "get %d items %f" % (len(db_result), float(db_result[0]['distance']))
             for item in db_result:
                 final_rs.append(float(item['distance']))
@@ -105,7 +108,7 @@ def fetchDistance(url1, url2):
             return None
 
     except Exception as e:
-        raise e
+        #raise e
         print str(e)
         return None
 
