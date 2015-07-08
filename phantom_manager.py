@@ -196,8 +196,11 @@ def main():
     #queue.put(Task("https://en.wikipedia.org/wiki/Main_Page",10))
     queue.put(Task("http://www.yahoo.com",10))
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0"
-    log_dir = "/Users/xpan/Documents/projects/browser/logs"
-    worker_script_path = "/Users/xpan/Documents/projects/browser/phantom_worker.js"
+    if len(sys.argv) != 3:
+        print "usage: python phantom_manager.py log_dir phanton_worker.js_path"
+        return
+    log_dir = sys.argv[1]
+    worker_script_path = sys.argv[2]
 #task_queue, worker_count,
     #    timeout, user_agent, log_dir, worker_script_path
     manager = Manager(queue, 3, 120, user_agent,log_dir,worker_script_path)
