@@ -11,6 +11,6 @@ sudo npm install --save body-parser
 sudo npm install --save mongodb
 sudo npm install --save monk
 sudo npm install --save util
-sudo npm install nodemon
+sudo npm install -g nodemon
 
 
