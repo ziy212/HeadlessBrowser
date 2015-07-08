@@ -165,20 +165,43 @@ def findContentsFromURLList(list):
                 logger.debug("find distance [%s][%s]: %f " %(\
                     url1, url2, rs[0]) )
 
+'''
+#calc distance between any two urls in url file
 l = []
 f = open(sys.argv[1])
 for line in f:
     l.append(line.strip())
 findContentsFromURLList(l)
-       
-#rs = fetchURLContents(sys.argv[1])
+'''
+
+#fetch contents from url file
+url_file = open(sys.argv[1])
+rs = fetchURLContents(sys.argv[1])
+for url in url_file:
+    url = url.strip()
+    rs = fetchURLContents(url)
+    o = urlparse.urlparse(url)
+    paths = o.path.split('/')
+    dir_name = paths[-2]
+    path = os.path.join('./tmp',dir_name)
+    if not os.path.exists(path):
+        os.makedirs(path)    
+    print "%s %d %s" %(url.strip(),len(rs),dir_name)
+    count = 1
+    for item in rs:
+        file_path = os.path.join(path,'%d.txt'%count)
+        f = open(file_path,'w')
+        f.write(item+'\n')
+        f.close()
+        count += 1
 #rs = fetchURLContents("*")
 #findContentsFromURLList(["http://www.google.com"])
 #print storeDistance("http://www.sina.com.cn","http://www.google.com",8.2)
 #print storeDistance("http://www.google.com","http://www.baidu.com",1.2)
 #print storeDistance("http://www.google.com","http://www.google.com",1.2)
 #print storeDistance("http://www.cnn.com","http://www.google.com",3.2)
-print findAverageContents(["dsdsdsdsdsdsd","abc","dsdsdsdsdsdWWW"])
+
+#print findAverageContents(["dsdsdsdsdsdsd","abc","dsdsdsdsdsdWWW"])
 
 '''
 rs = fetchDistance("http://www.google.com","http://www.sina.com.cn")

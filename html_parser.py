@@ -327,8 +327,8 @@ def getLDPairRepr(root):
 	return result, script_hosts, script_contents
 
 def calcTwoHTMLDistanceFromFiles(dom_path1, dom_path2):	
-	contents1 = open(dom1_path).read()
-	contents2 = open(dom2_path).read()
+	contents1 = open(dom_path1).read()
+	contents2 = open(dom_path2).read()
 	calcTwoHTMLDistance(contents1,contents2)
 
 
