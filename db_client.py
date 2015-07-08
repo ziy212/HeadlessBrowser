@@ -137,12 +137,13 @@ def findAverageContents(arr):
         if len(item) == len_val:
             return item
 
-def findContentsFromURLList(list):
-    list_len = len(list)
+def findContentsFromURLList(urllist):
+    list_len = len(urllist)
     for i in range(list_len):
         for j in range(i+1, list_len):
-            url1 = list[i]
-            url2 = list[j]
+            print i,j
+            url1 = urllist[i]
+            url2 = urllist[j]
             if url1 == url2:
                 continue
             rs = fetchDistance(url1, url2)
