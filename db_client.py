@@ -149,6 +149,7 @@ def findContentsFromURLList(urllist):
                 continue
             rs = fetchDistance(url1, url2)
             if rs == None or len(rs) == 0:
+                print "3 %d %d" %(i,j)
                 contents1 = fetchURLContents(url1)
                 contents2 = fetchURLContents(url2)
                 c1 = findAverageContents(contents1)
@@ -159,11 +160,14 @@ def findContentsFromURLList(urllist):
                 if c2 == None :
                     logger.debug("[alert] [%s] has no contents" %url2 )
                     continue  
+                print "4 %d %d" %(i,j)
                 distance = calcTwoHTMLDistance(c1, c2)
+                print "5 %d %d" %(i,j)
                 r = storeDistance(url1, url2, distance)
                 logger.debug("calculate distance [%s][%s]: %f %s" %(\
                     url1, url2, distance, r) )
             else:
+                print "6 %d %d %s" %(i,j,str(rs))
                 logger.debug("find distance [%s][%s]: %f " %(\
                     url1, url2, rs[0]) )
 
