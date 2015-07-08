@@ -356,6 +356,8 @@ def calcTwoHTMLDistance(contents1, contents2):
 	D = mmdiff(ld1, ld2)
 	return mmdiffR(ld1, ld2, D, \
 		ld1_script_hosts,ld1_script_contents, ld2_script_hosts, ld2_script_contents)
+
+
 #################STRING##########################
 
 def longest_common_substring(s1, s2):
@@ -407,16 +409,7 @@ def similar_strings(s1, s2, threthold):
 		return True
 	else:
 		return False
-	
-	#jaccard = distance.jaccard(s1,s2)
-	#print str(jaccard)
-	
-	'''
-	levenshtein = distance.levenshtein(s1,s2)
-	print "levenshtein %d, threthold:%d" %(levenshtein, int(length * threthold))
-	if levenshtein < length - length * threthold:
-		return True
-	'''
+
 	return False
 
 def compare_two_string(str1, str2, threthold=0.8):
@@ -451,7 +444,7 @@ def compare_two_string(str1, str2, threthold=0.8):
 ##################################################
 
 def main():
-	calcTwoHTMLDistance(sys.argv[1], sys.argv[2])
+	calcTwoHTMLDistanceFromFiles(sys.argv[1], sys.argv[2])
 
 if __name__ == "__main__":
 	main()
