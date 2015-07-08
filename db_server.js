@@ -32,8 +32,9 @@ app.use(function(req,res,next){
 });
 
 app.post('/api/web-contents/distance', function (req, res) {
-	if ( !req.body.url1 || !req.body.url2 || !req.body.score ) {
-		res.json({success : false});
+	if ( !req.body.url1 || !req.body.url2 || !req.body.distance ) {
+		console.log(req.body.url1+" "+req.body.url2+" "+req.body.distance);
+		return res.json({success : false});
 	}
 	try{
 		var url1 = standardizeURL(req.body.url1);
@@ -55,6 +56,7 @@ app.post('/api/web-contents/distance', function (req, res) {
   		url2 : url2});
 	}
 	catch (e) {
+		console.log("error: "+e);
 		res.json({
   		success : false,
   		message : e});
@@ -63,24 +65,25 @@ app.post('/api/web-contents/distance', function (req, res) {
   try{
 	  var collection = db.get('distance');
 	  collection.insert({
-	  	url1 : url1, url2 : url2, score : score
+	  	url1 : url1, url2 : url2, distance : req.body.distance
 	  }, function (err, doc) {
 	    if (err) {
 	        console.log("[FAIL] failed to insert distance into DB: "
-	        	+err+" "+url1," ",url2);
+	        	+err+" "+url1+" "+url2);
 	    }
 	    else {
-	        console.log("[SUCC] inserted distance into DB: "+url1," ",url2);
+	        console.log("[SUCC] inserted distance into DB: "+url1+" "+url2);
 	    }} );
+
 	  collection.insert({
-	  	url1 : url2, url2 : url1, score : score
+	  	url1 : url2, url2 : url1, distance : req.body.distance
 	  }, function (err, doc) {
 	    if (err) {
 	        console.log("[FAIL] failed to insert distance into DB: "
-	        	+err+" "+url1," ",url2);
+	        	+err+" "+url1+" "+url2);
 	    }
 	    else {
-	        console.log("[SUCC] inserted distance into DB: "+url1," ",url2);
+	        console.log("[SUCC] inserted distance into DB: "+url1+" "+url2);
 	    }} );
   
   }
@@ -116,6 +119,57 @@ app.post('/api/web-contents/store', function (req, res) {
   catch (e) {
   	console.log("[FAIL] failed to process req "+e);
   }
+});
+
+app.post('/api/web-contents/fetch-distance', function (req, res){
+	var url, data, index, collection;
+	if ( !req.body.url1 || !req.body.url2 ) {
+		res.json({success : false});
+		return
+	}
+	try{
+		console.log("URL1:"+req.body.url1+" URL2:"+req.body.url2)
+		if (req.body.url1 === "*" && req.body.url2 === "*") {
+			data = {}
+		}
+		else if (req.body.url1 === "*") {
+			url = standardizeURL(req.body.url2);
+			data = {url2 : url}
+		}
+		else if (req.body.url2 === "*") {
+			url = standardizeURL(req.body.url1);
+			data = {url1 : url}
+		}
+		else {
+  		url1 = standardizeURL(req.body.url1);
+  		url2 = standardizeURL(req.body.url2);
+  		data = {url1 : url1, url2 : url2}
+		}
+  	console.log("  [DEBUG] fetch distance : " + data);
+	  collection = db.get('distance');
+	  collection.find(data, function (err, docs) {
+	    if (err) {
+	        console.log("[FAIL] failed to fetch contents for "+url);
+	        res.json({
+  					success : false
+  				});
+	    }
+	    else {
+	        console.log("[SUCC] " + docs.length +' items');
+	        for (index in docs) {
+	        	docs[index].url1 = querystring.escape(docs[index].url1);
+	        	docs[index].url2 = querystring.escape(docs[index].url2);
+	        }
+	        res.json({
+  					success : true,
+  					result : JSON.stringify(docs)
+  				});
+	    }} );
+  }
+  catch (e) {
+  	console.log("[FAIL] failed to process req "+e);
+  	res.json({ success : false });
+  }	
 });
 
 app.post('/api/web-contents/fetch', function (req, res){
