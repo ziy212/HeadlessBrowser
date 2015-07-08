@@ -105,6 +105,7 @@ def fetchDistance(url1, url2):
             return None
 
     except Exception as e:
+        raise e
         print str(e)
         return None
 
