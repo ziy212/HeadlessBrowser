@@ -141,9 +141,10 @@ def findContentsFromURLList(urllist):
     list_len = len(urllist)
     for i in range(list_len):
         for j in range(i+1, list_len):
-            print i,j
+            print "1 %d %d" %(i,j)
             url1 = urllist[i]
             url2 = urllist[j]
+            print "2 %d %d" %(i,j)
             if url1 == url2:
                 continue
             rs = fetchDistance(url1, url2)
