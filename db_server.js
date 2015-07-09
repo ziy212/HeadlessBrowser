@@ -92,6 +92,58 @@ app.post('/api/web-contents/distance', function (req, res) {
   }
 });
 
+app.post('/api/web-contents/scripts-store', function (req, res) {
+	if ( !req.body.url || !req.body.hosts || !req.body.inlines ) {
+		console.log(req.body.url+" "+req.body.hosts+" "+req.body.inlines);
+		return res.json({success : false});
+	}
+	try{
+		var url = standardizeURL(req.body.url);
+	  
+	  res.json({
+  		success : true,
+  		url : url});
+	}
+	catch (e) {
+		console.log("error: "+e);
+		res.json({
+  		success : false,
+  		message : e});
+	}
+  
+  try{
+	  var collection = db.get('scripthosts');
+	  collection.insert({
+	  	url : url, hosts : req.body.hosts
+	  }, function (err, doc) {
+	    if (err) {
+	        console.log("[FAIL] failed to insert script hosts into DB: "
+	        	+err+" "+url);
+	    }
+	    else {
+	        console.log("[SUCC] inserted script hosts into DB: "+
+	        	url+" "+req.body.hosts.length);
+	    }} );
+
+	  collection = db.get('inlinescripts');
+	  collection.insert({
+	  	url : url, inlines : req.body.inlines
+	  }, function (err, doc) {
+	    if (err) {
+	        console.log("[FAIL] failed to insert inline scripts into DB: "
+	        	+err+" "+url);
+	    }
+	    else {
+	        console.log("[SUCC] inserted inline scripts into DB: "+
+	        	url+" "+req.body.hosts.length);
+	    }} );
+  }
+  catch (e) {
+  	console.log("[FAIL] failed to insert inline scripts into DB "+e);
+  }
+});
+
+
 app.post('/api/web-contents/store', function (req, res) {
 	if ( !req.body.url || !req.body.contents ) {
 		res.json({success : false});

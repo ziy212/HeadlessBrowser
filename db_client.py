@@ -76,6 +76,30 @@ def storeDistance(url1, url2, distance):
         print str(e)
         return False
 
+def storeScripts(url, host_list, inline_list):
+    try:
+        host = "http://localhost:4040/api/web-contents/scripts-store"
+        req = urllib2.Request(host)
+        req.add_header('Content-Type', 'application/json')
+
+        url = urllib.quote_plus(url)
+        
+        data = { 'url' : url.strip(), 'hosts' : host_list, 'inlines' : inline_list }
+
+        response = urllib2.urlopen(req, json.dumps(data))
+        rs = json.loads(response.read())
+        
+        if rs['success']:
+            print "successfully store scripts for url %s " % url
+            return True
+        else:
+            print "failed to store scripts for url %s " % url
+            return False
+
+    except Exception as e:
+        print str(e)
+        return False
+
 def fetchDistance(url1, url2):
     try:
         host = "http://localhost:4040/api/web-contents/fetch-distance"
@@ -185,6 +209,7 @@ def main():
     findContentsFromURLList(l)
     '''
 
+    '''
     #fetch contents from url file
     url_file = open(sys.argv[1])
     rs = fetchURLContents(sys.argv[1])
@@ -207,6 +232,15 @@ def main():
             f.write(item+'\n')
             f.close()
             count += 1
+    '''
+
+    #client
+    storeScripts("http://www.example.com",\
+        ["azone.com","b.com","ads.net"], \
+        ["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"])
+
     #rs = fetchURLContents("*")
     #findContentsFromURLList(["http://www.google.com"])
     #print storeDistance("http://www.sina.com.cn","http://www.google.com",8.2)

@@ -1,14 +1,48 @@
 from html_parser import calcTwoHTMLDistanceFromFiles
 from html_parser import extractScriptFromContents
 from html_parser import compare_two_string
+from db_client import storeScripts
 import sys
 
+def extractAndStoreScriptsFromDOM(url, dom):
+  hostset, contset = extractScriptFromContents(dom)
+  host_list = []
+  cont_list = []
+  for item in hostset:
+    try:
+      new_item = item.decode('utf-8')
+      host_list.append(new_item)
+    except Exception as e:
+      print "Exception in decoding: "+str(e)
+      host_list.append(item)
+
+  for item in contset:
+    try:
+      new_item = item.decode('utf-8')
+      cont_list.append(new_item)
+    except Exception as e:
+      print "Exception in decoding: "+str(e)
+      cont_list.append(item)
+  print "script host: %d script contents: %d" %(len(host_list), len(cont_list))
+
+  for item in cont_list:
+    print "content: %s" %item
+
+  storeScripts(url, host_list, cont_list)
+
+def main():
+  contents = open(sys.argv[1]).read()
+  extractAndStoreScriptsFromDOM("http://www.sina.com.cn", contents )
+
+if __name__ == "__main__":
+  main()
+
+'''
 #print calcTwoHTMLDistanceFromFiles(sys.argv[1],sys.argv[2])
 content1 = open(sys.argv[1]).read()
 content2 = open(sys.argv[2]).read()
 hostset1, contset1 = extractScriptFromContents(content1)
 hostset2, contset2 = extractScriptFromContents(content2)
-
 
 inter = hostset1.intersection(hostset2)
 print len(inter)
@@ -46,3 +80,4 @@ for item in diffc2:
   item.replace('\n','\t')
   print "DIFFC2: "+item
 print "%d %d vs %d %d" %(len(hostset1), len(contset1), len(hostset2), len(contset2))
+'''
