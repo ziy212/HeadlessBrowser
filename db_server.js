@@ -264,8 +264,92 @@ app.post('/api/web-contents/fetch', function (req, res){
   	console.log("[FAIL] failed to process req "+e);
   	res.json({ success : false });
   }	
-
 });
+
+app.post('/api/web-contents/scripts-fetch', function (req, res){
+  var url, data, index, collection,
+    result = {};
+  if ( !req.body.url ) {
+    res.json({success : false});
+    return
+  }
+  try{
+    console.log("Fetch scripts of url:"+req.body.url)
+    if (req.body.url === "*" ) {
+      data = {};
+      result['url'] = "*";
+    }
+    else {
+      url = standardizeURL(req.body.url);
+      data = {url : url};
+      result['url'] = req.body.url;
+    }
+    
+    console.log("  [DEBUG] fetch scripts : " + data);
+    /* fetch script hosts*/
+    collection = db.get('scripthosts'); //inlinescripts
+    collection.find(data, function (err, docs) {
+    if (err) {
+        console.log("[FAIL] failed to fetch script hosts for "+url);
+        res.json({
+          success : false,
+          message : "FAIL_FETCH_SCRIPT_HOSTS"
+        });
+    }
+    else {
+        console.log("[SUCC] fetch script hosts " + docs.length +' items');
+        result['scripthosts'] = []
+        for (index in docs) {
+          for (item in docs[index].hosts){
+            if (result['scripthosts'].indexOf(item) === -1){
+              result['scripthosts'].push(item);
+            }
+          }
+        }
+        if (result['inlinescripts']){
+          res.json({
+            success : true,
+            result : JSON.stringify(result)
+          });
+        }
+    }});
+  
+    /* fetch inline scripts*/
+    collection = db.get('inlinescripts'); //inlinescripts
+    collection.find(data, function (err, docs) {
+    if (err) {
+        console.log("[FAIL] failed to fetch inline scripts for "+url);
+        res.json({
+          success : false,
+          message : "FAIL_FETCH_INLINE_SCRIPTS"
+        });
+    }
+    else {
+        console.log("[SUCC] fetch inline scripts " + docs.length +' items');
+        result['inlinescripts'] = []
+        for (index in docs) {
+          for (item in docs[index].hosts){
+            if (result['inlinescripts'].indexOf(item) === -1){
+              result['inlinescripts'].push(item);
+            }
+          }
+        }
+        if (result['scripthosts']){
+          res.json({
+            success : true,
+            result : JSON.stringify(result)
+          });
+        }
+    }});
+  
+    
+  }
+  catch (e) {
+    console.log("[FAIL] failed to process req "+e);
+    res.json({ success : false });
+  } 
+});
+
 //standardizeURL("http%3A%2F%2Fwww.cnn.com");
 //standardizeURL("http://www.cnn.com/");
 //standardizeURL("http://www.cnn.com/abcd/eed/ffs.html?dsd=22&dsds=233&dsdsd");

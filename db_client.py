@@ -83,8 +83,10 @@ def storeScripts(url, host_list, inline_list):
         req.add_header('Content-Type', 'application/json')
 
         url = urllib.quote_plus(url)
-        
-        data = { 'url' : url.strip(), 'hosts' : host_list, 'inlines' : inline_list }
+        inline_list_encoded = [base64.b64encode(x) for x in inline_list]
+        data = { 'url' : url.strip(), 
+            'hosts' : host_list,
+            'inlines' : inline_list_encoded }
 
         response = urllib2.urlopen(req, json.dumps(data))
         rs = json.loads(response.read())
@@ -99,6 +101,40 @@ def storeScripts(url, host_list, inline_list):
     except Exception as e:
         print str(e)
         return False
+
+def fetchScripts(url):
+    try:
+        host = "http://localhost:4040/api/web-contents/scripts-fetch"
+        req = urllib2.Request(host)
+        req.add_header('Content-Type', 'application/json')
+
+        if url != '*':
+            url1 = urllib.quote_plus(url1)
+
+        data = { 'url' : url.strip() }
+
+        response = urllib2.urlopen(req, json.dumps(data))
+        rs = json.loads(response.read())
+        
+        final_rs = []
+        if rs['success']:
+            db_result = json.loads(rs['result'])
+            if db_result == None or \
+                not db_result['inlinescripts'] or not db_result['scripthosts']:
+                print "no scripts %s" %(str(db_result))
+                return None,None
+            #print "get %d items %f" % (len(db_result), float(db_result[0]['distance']))
+            inline_list = [base64.b64decode(x) for x in db_result['inlinescripts']]
+
+            return db_result['scripthosts'], inline_list
+        else:
+            print "failed to fetch contents of url: "+url
+            return None, None
+
+    except Exception as e:
+        #raise e
+        print str(e)
+        return None
 
 def fetchDistance(url1, url2):
     try:

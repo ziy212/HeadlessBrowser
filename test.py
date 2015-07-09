@@ -32,7 +32,7 @@ def extractAndStoreScriptsFromDOM(url, dom):
 
 def main():
   contents = open(sys.argv[1]).read()
-  extractAndStoreScriptsFromDOM("http://www.sina.com.cn", contents )
+  extractAndStoreScriptsFromDOM("http://www.cnn.com/microsoft", contents )
 
 if __name__ == "__main__":
   main()
