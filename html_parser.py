@@ -357,6 +357,7 @@ def calcTwoHTMLDistance(contents1, contents2):
 	return mmdiffR(ld1, ld2, D, \
 		ld1_script_hosts,ld1_script_contents, ld2_script_hosts, ld2_script_contents)
 
+###################EXTRACTION SCRIPT##########################
 
 def extractionHelper(root, result, script_hosts, script_contents):
 	#result.append(root)
@@ -365,9 +366,17 @@ def extractionHelper(root, result, script_hosts, script_contents):
 			script_hosts.add(root.src)
 		elif root.val != "":
 			script_contents.add(root.val)
+			#if 'json' in root.tp:
+			#	try:
+			#		json.loads(root.val)
+			#		script_contents.add((root.val,"json"))
+			#	except Exception as e:
+			#		script_contents.add((root.val,"script"))
+			#else:
+			#	script_contents.add((root.val,"script"))
 
 	for child in root.children:
-		getLDPairReprHelper(child, result, script_hosts, script_contents)
+		extractionHelper(child, result, script_hosts, script_contents)
 
 def extractScriptFromDOMTree(root):
 	result = [None]
@@ -388,11 +397,11 @@ def extractScriptFromContents(contents):
 	traverseDOMTree(soup.html,node, 0)
 	script_hosts, script_contents = extractScriptFromDOMTree(node)
 	
-	for host in script_hosts:
-		print "host: %s" %host
-	for content in script_contents:
-		print "content: %s" %content
-	print "summary Host:%d Contents:%d" %(len(script_hosts), len(script_contents))
+	#for host in script_hosts:
+	#	print "host: %s" %host
+	#for content in script_contents:
+	#	print "content: %s" %content
+	#print "summary Host:%d Contents:%d" %(len(script_hosts), len(script_contents))
 
 	return script_hosts, script_contents
 
@@ -482,7 +491,9 @@ def compare_two_string(str1, str2, threthold=0.8):
 ##################################################
 
 def main():
-	calcTwoHTMLDistanceFromFiles(sys.argv[1], sys.argv[2])
+	#calcTwoHTMLDistanceFromFiles(sys.argv[1], sys.argv[2])
+	contents = open(sys.argv[1]).read()
+	extractScriptFromContents(contents)
 
 if __name__ == "__main__":
 	main()

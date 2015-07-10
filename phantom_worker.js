@@ -68,7 +68,7 @@ taskWorker = (function (){
   };
 
   send_contents = function (url, contents) {
-    var db_listener = "http://localhost:4040/api/web-contents/store",
+    var db_listener = "http://localhost:4040/api/web-contents/contents-store",
       sender, error = null, 
       json_header, encoded_contents, data;
     sender = require('webpage').create();

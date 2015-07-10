@@ -31,7 +31,8 @@ app.use(function(req,res,next){
     next();
 });
 
-app.post('/api/web-contents/distance', function (req, res) {
+/* Store Distance */
+app.post('/api/web-contents/distance-store', function (req, res) {
 	if ( !req.body.url1 || !req.body.url2 || !req.body.distance ) {
 		console.log(req.body.url1+" "+req.body.url2+" "+req.body.distance);
 		return res.json({success : false});
@@ -92,6 +93,7 @@ app.post('/api/web-contents/distance', function (req, res) {
   }
 });
 
+/* Store Scripts */
 app.post('/api/web-contents/scripts-store', function (req, res) {
 	if ( !req.body.url || !req.body.hosts || !req.body.inlines ) {
 		console.log(req.body.url+" "+req.body.hosts+" "+req.body.inlines);
@@ -143,8 +145,8 @@ app.post('/api/web-contents/scripts-store', function (req, res) {
   }
 });
 
-
-app.post('/api/web-contents/store', function (req, res) {
+/* Store Contents */
+app.post('/api/web-contents/contents-store', function (req, res) {
 	if ( !req.body.url || !req.body.contents ) {
 		res.json({success : false});
 	}
@@ -173,7 +175,8 @@ app.post('/api/web-contents/store', function (req, res) {
   }
 });
 
-app.post('/api/web-contents/fetch-distance', function (req, res){
+/* Fetch distance */
+app.post('/api/web-contents/distance-fetch', function (req, res){
 	var url, data, index, collection;
 	if ( !req.body.url1 || !req.body.url2 ) {
 		res.json({success : false});
@@ -224,7 +227,8 @@ app.post('/api/web-contents/fetch-distance', function (req, res){
   }	
 });
 
-app.post('/api/web-contents/fetch', function (req, res){
+/* Fetch Contents */
+app.post('/api/web-contents/contents-fetch', function (req, res){
 	var url, data, index, collection;
 	if ( !req.body.url ) {
 		res.json({success : false});
@@ -266,8 +270,9 @@ app.post('/api/web-contents/fetch', function (req, res){
   }	
 });
 
+/* Fetch Scripts */
 app.post('/api/web-contents/scripts-fetch', function (req, res){
-  var url, data, index, collection,
+  var url, data, index, collection, val, i, j,
     result = {};
   if ( !req.body.url ) {
     res.json({success : false});
@@ -299,14 +304,16 @@ app.post('/api/web-contents/scripts-fetch', function (req, res){
     else {
         console.log("[SUCC] fetch script hosts " + docs.length +' items');
         result['scripthosts'] = []
-        for (index in docs) {
-          for (item in docs[index].hosts){
-            if (result['scripthosts'].indexOf(item) === -1){
-              result['scripthosts'].push(item);
+        for (i in docs) {
+          for (j in docs[i]['hosts']){
+          	val = docs[i]['hosts'][j]
+            if (result['scripthosts'].indexOf(val) === -1){
+              result['scripthosts'].push(val);
             }
           }
         }
         if (result['inlinescripts']){
+        	//console.log("[DEBUG] send in hosts callback");
           res.json({
             success : true,
             result : JSON.stringify(result)
@@ -327,14 +334,17 @@ app.post('/api/web-contents/scripts-fetch', function (req, res){
     else {
         console.log("[SUCC] fetch inline scripts " + docs.length +' items');
         result['inlinescripts'] = []
-        for (index in docs) {
-          for (item in docs[index].hosts){
-            if (result['inlinescripts'].indexOf(item) === -1){
-              result['inlinescripts'].push(item);
+        for (i in docs) {
+          for (j in docs[i]['inlines']){
+          	val = docs[i]['inlines'][j]
+          	//console.log("[DEBUG ]incline:"+val);
+            if (result['inlinescripts'].indexOf(val) === -1){
+              result['inlinescripts'].push(val);
             }
           }
         }
         if (result['scripthosts']){
+        	//console.log("[DEBUG] send in inlines callback | "+JSON.stringify(result));
           res.json({
             success : true,
             result : JSON.stringify(result)

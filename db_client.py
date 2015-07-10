@@ -8,6 +8,7 @@ import urlparse
 from html_parser import calcTwoHTMLDistance
 import logging
 import math
+import traceback
 
 logger = logging.getLogger('DOMCluster')
 hdlr = logging.FileHandler('./cluster.log')
@@ -21,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 
 def fetchURLContents(url):
     try:
-        host = "http://localhost:4040/api/web-contents/fetch"
+        host = "http://localhost:4040/api/web-contents/contents-fetch"
         req = urllib2.Request(host)
         req.add_header('Content-Type', 'application/json')
 
@@ -51,7 +52,7 @@ def fetchURLContents(url):
 
 def storeDistance(url1, url2, distance):
     try:
-        host = "http://localhost:4040/api/web-contents/distance"
+        host = "http://localhost:4040/api/web-contents/distance-store"
         req = urllib2.Request(host)
         req.add_header('Content-Type', 'application/json')
 
@@ -92,14 +93,14 @@ def storeScripts(url, host_list, inline_list):
         rs = json.loads(response.read())
         
         if rs['success']:
-            print "successfully store scripts for url %s " % url
+            #print "successfully store scripts for url %s " % url
             return True
         else:
-            print "failed to store scripts for url %s " % url
+            #print "failed to store scripts for url %s " % url
             return False
 
     except Exception as e:
-        print str(e)
+        print >> sys.stderr, "Exception in storeScripts: "+str(e)
         return False
 
 def fetchScripts(url):
@@ -109,7 +110,7 @@ def fetchScripts(url):
         req.add_header('Content-Type', 'application/json')
 
         if url != '*':
-            url1 = urllib.quote_plus(url1)
+            url = urllib.quote_plus(url)
 
         data = { 'url' : url.strip() }
 
@@ -121,11 +122,15 @@ def fetchScripts(url):
             db_result = json.loads(rs['result'])
             if db_result == None or \
                 not db_result['inlinescripts'] or not db_result['scripthosts']:
-                print "no scripts %s" %(str(db_result))
+                #print "no scripts %s %s" %(str(db_result['inlinescripts']), str(db_result['scripthosts']))
                 return None,None
             #print "get %d items %f" % (len(db_result), float(db_result[0]['distance']))
-            inline_list = [base64.b64decode(x) for x in db_result['inlinescripts']]
-
+            try:
+                inline_list = [base64.b64decode(x) for x in db_result['inlinescripts']]
+            except UnicodeEncodeError as e:
+                inline_list = db_result['inlinescripts']
+            except TypeError as e:
+                inline_list = db_result['inlinescripts']
             return db_result['scripthosts'], inline_list
         else:
             print "failed to fetch contents of url: "+url
@@ -133,12 +138,13 @@ def fetchScripts(url):
 
     except Exception as e:
         #raise e
-        print str(e)
-        return None
+        traceback.print_exc(file=sys.stdout)
+        print "Error:",str(e)
+        return None, None
 
 def fetchDistance(url1, url2):
     try:
-        host = "http://localhost:4040/api/web-contents/fetch-distance"
+        host = "http://localhost:4040/api/web-contents/distance-fetch"
         req = urllib2.Request(host)
         req.add_header('Content-Type', 'application/json')
 
@@ -271,11 +277,13 @@ def main():
     '''
 
     #client
-    storeScripts("http://www.example.com",\
-        ["azone.com","b.com","ads.net"], \
-        ["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-        "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"])
+    #storeScripts("http://www.example.com",\
+    #    ["azone.com","b.com","ads.net"], \
+    #    ["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    #    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+    #    "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"])
+    hosts, inlines = fetchScripts("http://www.sina.com.cn")
+    print len(hosts), len(inlines)
 
     #rs = fetchURLContents("*")
     #findContentsFromURLList(["http://www.google.com"])
