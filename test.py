@@ -70,14 +70,15 @@ def fetchAndDisplayScriptsFromDB(url):
   if hosts == None or inlines == None:
     print "%s has no scripts: " %url
     return 
-  for host in hosts:
-    print host
-  for inline in inlines:
-    print inline
-  print len(inlines)
+  #for host in hosts:
+  #  print host
+  #for inline in inlines:
+  #  print inline
+  #print len(inlines)
 
 def main():
   #contents = open(sys.argv[1]).read()
+  #print "done reading"
   #extractAndStoreScriptsFromDOM("http://www.cnn.com/", contents )
   #fetchAndDisplayScriptsFromDB("http://www.cnn.com/")
   extractAndStoreScriptsFromFileList(sys.argv[1])
