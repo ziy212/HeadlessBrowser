@@ -251,7 +251,7 @@ def main():
     findContentsFromURLList(l)
     '''
 
-    '''
+    #'''
     #fetch contents from url file
     url_file = open(sys.argv[1])
     rs = fetchURLContents(sys.argv[1])
@@ -262,7 +262,7 @@ def main():
         paths = o.path.split('/')
         dir_name = paths[-2]
         if len(dir_name.strip()) == 0:
-            dir_name = o.netloc +'_'+ paths[-1]
+            dir_name = "NEW_"+o.netloc +'_'+ paths[-1]
         path = os.path.join('./tmp',dir_name)
         if not os.path.exists(path):
             os.makedirs(path)    
@@ -274,7 +274,7 @@ def main():
             f.write(item+'\n')
             f.close()
             count += 1
-    '''
+    #'''
 
     #client
     #storeScripts("http://www.example.com",\
@@ -282,8 +282,8 @@ def main():
     #    ["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     #    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
     #    "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"])
-    hosts, inlines = fetchScripts("http://www.sina.com.cn")
-    print len(hosts), len(inlines)
+    #hosts, inlines = fetchScripts("http://www.sina.com.cn")
+    #print len(hosts), len(inlines)
 
     #rs = fetchURLContents("*")
     #findContentsFromURLList(["http://www.google.com"])

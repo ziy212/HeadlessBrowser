@@ -5,7 +5,10 @@ from db_client import storeScripts
 from db_client import fetchScripts
 from db_client import fetchURLContents
 from db_client import findAverageContents
-import sys
+from ASTAnalyzer import analyzeJSCodes
+from ASTAnalyzer import analyzeJSON
+import sys, os
+import hashlib
 
 def extractAndStoreScriptsFromFileList(file_list_path):
   f = open(file_list_path)
@@ -69,19 +72,93 @@ def fetchAndDisplayScriptsFromDB(url):
   hosts, inlines = fetchScripts(url)
   if hosts == None or inlines == None:
     print "%s has no scripts: " %url
-    return 
+    return
+  print "receive %d inlines " % (len(inlines)) 
+
+  for inline in inlines:
+    rs = analyzeJSCodes(inline)
+    if rs == None:
+      rs = analyzeJSON(inline)
+    if rs == None:
+      continue
+    #for item in rs:
+    #  print item,
+    print len(rs)
   #for host in hosts:
   #  print host
   #for inline in inlines:
   #  print inline
   #print len(inlines)
 
+def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
+  f = open(path)
+  scriptdict = {}
+  for line in f:
+    url = line.strip()
+    print "process url "+url
+    hosts, inlines = fetchScriptsFromDB(url)
+    if inlines==None or len(inlines) ==0:
+      print "no inlines for "+url
+      continue
+    for inline in inlines:
+      #print "INLINE:%s" % inline
+      rs = analyzeJSCodes(inline)
+      if rs == None:
+        rs = analyzeJSON(inline)
+      if rs == None:
+        continue
+      m = hashlib.md5()
+      for node in rs:
+        m.update(node)
+      key = m.hexdigest()
+      if not key in scriptdict:
+        scriptdict[key] = [(inline,url)]
+        print "  add key  %s" %key
+      else:
+        contents = [x[0] for x in scriptdict[key]]
+        if not inline in contents:
+          scriptdict[key].append((inline,url) )
+          print "  item %s has %d distinct scripts" %(key, len(scriptdict[key]))
+  keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
+  for key in keys:
+    name = "%d_%s" %(len(scriptdict[key]),key)
+    fw = open(os.path.join(dst_path,name), 'w')
+    for item in scriptdict[key]:
+      fw.write(item[1]+"||"+item[0]+"\n")
+    print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
+    fw.close()
+
+def extractAndAnalyzeScriptsFromFile(path):
+  content = open(path).read()
+  hostset, contset = extractScriptFromContents(content)
+  rs_list = []
+  for item in contset:
+    m = hashlib.md5()
+    #print len(item)
+    rs = analyzeJSCodes(item)
+    for node in rs:
+      m.update(node)
+    rs = m.digest()
+    rs_list.append(rs)
+  return rs_list
+
+
 def main():
   #contents = open(sys.argv[1]).read()
   #print "done reading"
   #extractAndStoreScriptsFromDOM("http://www.cnn.com/", contents )
-  #fetchAndDisplayScriptsFromDB("http://www.cnn.com/")
-  extractAndStoreScriptsFromFileList(sys.argv[1])
+  #fetchAndDisplayScriptsFromDB("http://www.google.com/")
+  #extractAndStoreScriptsFromFileList(sys.argv[1])
+  '''
+  print "First one"
+  list1 = extractAndAnalyzeScriptsFromFile(sys.argv[1])
+  print "Next one"
+  list2 = extractAndAnalyzeScriptsFromFile(sys.argv[2])
+  for item in list1:
+    if not item in list2:
+      print "error"
+  '''
+  fetchAndProcessScriptsOfURLsFromFile(sys.argv[1],sys.argv[2])
 
 if __name__ == "__main__":
   main()
