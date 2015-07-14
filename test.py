@@ -7,6 +7,7 @@ from db_client import fetchURLContents
 from db_client import findAverageContents
 from ASTAnalyzer import analyzeJSCodes
 from ASTAnalyzer import analyzeJSON
+from ASTAnalyzer import ASTOutputNode
 import sys, os
 import hashlib
 
@@ -102,31 +103,123 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
       continue
     for inline in inlines:
       #print "INLINE:%s" % inline
+      is_json = False
       rs = analyzeJSCodes(inline)
       if rs == None:
         rs = analyzeJSON(inline)
+        is_json = True
       if rs == None:
         continue
       m = hashlib.md5()
-      for node in rs:
-        m.update(node)
+      if not is_json:
+        for node in rs:
+          m.update(node.tag)
+      else:
+        for k in rs:
+           m.update(k)
       key = m.hexdigest()
       if not key in scriptdict:
-        scriptdict[key] = [(inline,url)]
+        scriptdict[key] = [(inline,url,rs)]
         print "  add key  %s" %key
       else:
         contents = [x[0] for x in scriptdict[key]]
         if not inline in contents:
-          scriptdict[key].append((inline,url) )
+          scriptdict[key].append((inline,url, rs) )
           print "  item %s has %d distinct scripts" %(key, len(scriptdict[key]))
+ 
   keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
   for key in keys:
     name = "%d_%s" %(len(scriptdict[key]),key)
     fw = open(os.path.join(dst_path,name), 'w')
     for item in scriptdict[key]:
-      fw.write(item[1]+"||"+item[0]+"\n")
+      fw.write(item[1]+"||"+str(item[0])+"\n")
+    
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
+
+    #make sure all inlines in a template have same sequential size
+    cur_len = 0
+    seq_length = 0
+    consistent = True
+    script_list = scriptdict[key]
+    for i in range(len(script_list)):
+      cur_len = len(script_list[i][2])
+      if seq_length == 0:
+        seq_length = cur_len
+        continue
+      if cur_len != seq_length:
+        print "WARNING not equal size sequential for %s" % name
+        consistent = False
+        break
+
+    if not consistent:
+      continue
+
+    #iterate tree list
+    script_length = len(script_list)
+    for i in range(seq_length):
+      try:
+        if not isinstance(script_list[0][2][i], ASTOutputNode):
+          print "the inline is JSON script"
+          fw.write("the inline is JSON script\n")
+          break
+        if script_list[0][2][i].tag == "String":
+          val = []
+          for j in range(script_length):
+            val.append(script_list[j][2][i].value)
+          item = 'string%d: %s' %(i, '||'.join(val))
+          fw.write(item+"\n")
+        if script_list[0][2][i].tag == "Object":
+          rs = analyzeObjectResultHelper(script_list, i)
+          for key in rs:
+            fw.write("object:%d: [%s]:%s\n" % (i, key, str(rs[key])) )
+        if script_list[0][2][i].tag == "Array":
+          rs = analyzeArrayResultHelper(script_list, i)
+          for key in rs:
+            fw.write("array:%d: [%s]:%s\n" % (i, key, str(rs[key])) )
+      except Exception as e:
+        print "excpetion in displaying strings %d %s " %(i, str(e)) 
+
     fw.close()
+
+#script_list: [(script, url, node_list)]
+#return {key: [val]}
+def analyzeObjectResultHelper(script_list, index):
+  script_len = len(script_list)
+  rs = {}
+  for i in range(script_len):
+    try:
+      obj = script_list[i][2][index].value
+      for k in obj:
+        if not k in rs:
+          rs[k] = [obj[k]]
+        else:
+          rs[k].append(obj[k])
+    except Exception as e:
+      print "error in analyzeObjectResultHelper "+str(e)
+  return rs
+
+def analyzeArrayResultHelper(script_list, index):
+  script_len = len(script_list)
+  rs = {}
+  for i in range(script_len):
+    try:
+      arr = script_list[i][2][index].value
+      for obj in arr:
+        #obj = arr[j]
+        if isinstance(obj, basestring):
+          if not "basestring_" in rs:
+            rs['basestring_'] = [obj]
+          else:
+            rs['basestring_'].append(obj)
+        else:
+          for k in obj:
+            if not k in rs:
+              rs[k] = [obj[k]]
+            else:
+              rs[k].append(obj[k])
+    except Exception as e:
+      print "error in analyzeArrayResultHelper "+str(e)
+  return rs
 
 def extractAndAnalyzeScriptsFromFile(path):
   content = open(path).read()

@@ -28,6 +28,19 @@ def getASTClasses(path):
 
 ####################################
 
+class ASTOutputNode():
+  def __init__(self, tag):
+    self.tag = tag
+    self.value = None
+
+  def __eq__(self, other):
+    if not isinstance(other, ASTOutputNode):
+      return False
+    return self.tag == other.tag
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
 class MyVisitor():
   def __init__(self, display=True):
     #only show class name and iterate children
@@ -37,13 +50,15 @@ class MyVisitor():
     
     #leaf node and doesn't show value
     self.leaf_novalue_class = set(["Boolean", "Null", "Number", \
-      "String", "Regex", "Array", "Object"])
+     "Regex"])
 
     #leaf node and show value
     self.leaf_value_class = set(["Identifier"])
 
     self.node_order_list = []
     self.display = display
+    #self.string_value_list = []
+
   
   def is_structure_class(self, node):
     name = node.__class__.__name__
@@ -63,50 +78,170 @@ class MyVisitor():
       return True
     return False 
 
-  #def visit_Object(self, node, level):
-  #  space = ' '.ljust(level*2)
-  #  print "%s%s" %(space, node.__class__.__name__)
+  def visit_sensitive_node(self, node, level):
+    val = None
+    if isinstance(node,ast.FunctionCall) or \
+        isinstance(node, ast.NewExpr):
+        self.visit(node, level)
+        val = "[FunctionCall||NewExpr]"
+    elif isinstance(node, ast.Object):
+      #for prop in child:
+      #  left, right = prop.left, prop.right
+      #   print "  object: left:%s, right:%s" %(left, right)
+      count = 0
+      val = {}
+      for child in node:
+        if isinstance(child, ast.Assign):
+          key = self.visit_sensitive_node(child.left, level+1)
+          value = self.visit_sensitive_node(child.right, level+1)
+          if key != None and value != None:
+            val[key] = value
+        else:
+          #print "    NO-ASSIGN-CHILD ",str(count),child, node
+          if not "unknown" in val:
+            val['unknown'] = child.__class__.__name__
+          else:
+            val['unknown'].append(child.__class__.__name__)
+        count += 1
+    elif isinstance(node, ast.Array):
+      val = self.visit_sensitive_children(node, level)
+    elif isinstance(node, ast.String):
+      val = node.value
+    elif isinstance(node, ast.Identifier):
+      val = node.value
+
+    return val
+
+  def visit_sensitive_children(self, node, level):
+    rs = []
+    #print "DEBUG in processing visit_sensitive_children :NODE ",node
+    for child in node:
+      val = self.visit_sensitive_node(child, level+1)
+      if val != None:
+        rs.append(val)
+
+    return rs
+
+  def visit_Object(self, node, level):
+    #self.display = True
+    space = ' '.ljust(level*2)
+    tag =  node.__class__.__name__
+    if self.display:
+      print "%s%s" %(space, tag)
+    output_node = ASTOutputNode(tag)
+    self.node_order_list.append(output_node)
+
+    #print "process object ",node
+    val = {}
+    for child in node:
+      if isinstance(child, ast.Assign):
+        key = self.visit_sensitive_node(child.left, level+1)
+        value = self.visit_sensitive_node(child.right, level+1)
+        if key != None and value != None:
+          val[key] = value
+      else:
+        #print "    NO-ASSIGN-CHILD ",str(count),child, node
+        if not "unknown" in val:
+          val['unknown'] = child.__class__.__name__
+        else:
+          val['unknown'].append(child.__class__.__name__)
+
+    output_node.value = val
+    #print "Object start"
+    #for item in result:
+    #  print item
+    #print "Object done"
+    
+    return val
+
+  def visit_Array(self, node, level):
+    space = ' '.ljust(level*2)
+    tag =  node.__class__.__name__
+    if self.display:
+      print "%s%s" %(space, tag)
+    #print "Array with %d child " % (len(node.items))
+    
+    output_node = ASTOutputNode(tag)
+    self.node_order_list.append(output_node)
+
+    v = self.visit_sensitive_children(node, level+1)
+    output_node.value = v
+    #print "display array: %d" %len(v)
+    #for item in v:
+    #  print item
+    #print "done displaying array"
+    #output_node.value = v
+
+    return output_node
+    
+  def visit_String(self, node, level):
+    space = ' '.ljust(level*2)
+    tag =  node.__class__.__name__
+    output_node = ASTOutputNode(tag)
+    output_node.value = node.value
+    self.node_order_list.append(output_node)
+    #self.string_value_list.append(node.value)
+    if self.display:
+      print "%s%s" %(space, tag)
+    return node.value
 
   def visit_FunctionCall(self, node, level):
     space = ' '.ljust(level*2)
     tag = node.__class__.__name__ 
-    #try:
-    #  tag = node.__class__.__name__ +'_'+node.identifier.value
-    #except Exception as e:
-    #  tag = node.__class__.__name__ +'_'+node.identifier.__class__.__name__
-    self.node_order_list.append(tag)
+    
+    output_node = ASTOutputNode(tag)
+    self.node_order_list.append(output_node)
+
     if self.display:
       print "%s%s" %(space, tag)
-
+    #self.visit(node.identifier, level+1)
+    rs = {'name':"FunCall", 'val':[]}
     for child in node:
-      self.visit(child, level+1)
+      v = self.visit(child, level+1)
+      if not v == None:
+        rs['val'].append(v)
+
+    return rs
 
   def visit_VarStatement(self, node, level):
     for child in node:
       self.visit(child, level+1)
+    return None
 
   def leaf_value_visit(self, node, level):
     space = ' '.ljust(level*2)
     tag = node.value
-    self.node_order_list.append(tag)
+    output_node = ASTOutputNode(tag)
+    self.node_order_list.append(output_node)
     if self.display:
       print "%s%s" %(space, tag)
+    return tag
 
   def leaf_novalue_visit(self, node, level):
     space = ' '.ljust(level*2)
     tag = node.__class__.__name__
-    self.node_order_list.append(tag)
+    output_node = ASTOutputNode(tag)
+    output_node.value = node.value
+    self.node_order_list.append(output_node)
+
     if self.display:
       print "%s%s" %(space, tag)
+    return tag
 
   def generic_visit(self, node, level):
     space = ' '.ljust(level*2)
     tag = node.__class__.__name__
-    self.node_order_list.append(tag)
+    output_node = ASTOutputNode(tag)
+    self.node_order_list.append(output_node)
     if self.display:
       print "%s%s" %(space, tag)
+    rs = {'name':tag, 'val': []}
     for child in node:
-      self.visit(child, level+1)
+      v = self.visit(child, level+1)
+      if not v == None:
+        rs['val'].append(v)
+    #v = '_'.join(rs)
+    return rs
 
   def visit(self, node, level):
     if self.is_leaf_novalue_class(node):
@@ -128,8 +263,8 @@ def analyzeJSCodes(script, display=False):
     visitor.visit(tree, 0)
     return visitor.node_order_list
   except Exception as e:
-      print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
-      return None
+    print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
+    return None
 
 def analyzeJSON(script):
   try:
@@ -152,13 +287,48 @@ def main():
   
   count = 0
   results = []
+  strings = []
   for script in scripts:
     count += 1
-    l = analyzeJSCodes(script,True)
+    l = analyzeJSCodes(script, False)
     if l == None:
       continue
-
+    print len(l)
     results.append(l)
+
+  flag = True
+  for i in range(len(results[0])):
+    if not results[0][i] == results[1][i]:
+      print "No"
+      flag = False
+    elif results[0][i].tag == "String":
+      print "STRING:",results[0][i].value, " VS ", results[1][i].value
+    elif results[0][i].tag == "Object":
+      print "OBJECT:",results[0][i].value, " VS ", results[1][i].value 
+    elif results[0][i].tag == "Array":
+      for item in results[0][i].value:
+        print "LEFTARRAY: ",item,
+      print ""
+      print "  VS  "
+      for item in results[0][i].value:
+        print "RIGHTARRAY: ",item,
+      print ""
+  if flag:
+    print "DOOD"
+
+  script = "var _gaq = _gaq || []; " +\
+    "_gaq.push(['_setAccount', 'UA-XXXXX-X']);" +\
+    "_gaq.push(['_trackPageview']);" +\
+    "(function() { var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true; "+\
+    "ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';"+\
+    "var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})();"
+  #l, vl = analyzeJSCodes(script, True)
+  #for item in vl:
+  #  print item
+  #for i in range(len(strings[0])):
+  #  print strings[0][i]
+  #  print strings[1][i]
+  #  print ""
   
   #print len(results[0]),len(results[1])
   #for i in range(len(results[0])):
