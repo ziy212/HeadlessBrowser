@@ -20,7 +20,7 @@ def sendTaskFromFile(file_name):
 	f = open(file_name)
 	for line in f:
 		url = line.strip()
-		print "post task : url %s , times %d" %(url, 2)
+		print "post task : url %s , times %d" %(url, 3)
 		sendTask(url,3)
 
 sendTaskFromFile(sys.argv[1])

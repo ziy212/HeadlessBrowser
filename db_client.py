@@ -202,7 +202,8 @@ def findAverageContents(arr):
     if len(new_arr) == 0:
         print "All data are are outliers"
         len_val = len_arr[len(len_arr)/2]
-    len_val = new_arr[len(new_arr)/2]
+    else:
+        len_val = new_arr[len(new_arr)/2]
     for item in arr:
         if len(item) == len_val:
             return item

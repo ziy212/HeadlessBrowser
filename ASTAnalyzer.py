@@ -32,6 +32,7 @@ class ASTOutputNode():
   def __init__(self, tag):
     self.tag = tag
     self.value = None
+    self.child_num = 0
 
   def __eq__(self, other):
     if not isinstance(other, ASTOutputNode):
@@ -44,7 +45,7 @@ class ASTOutputNode():
 class MyVisitor():
   def __init__(self, display=True):
     #only show class name and iterate children
-    self.structure_class = set(["Program", "Block", "Node", \
+    self.structure_class = set(["Block", "Node", \
       "FuncExpr", "FuncDecl", "This", "NewExpr", \
       ""])
     
@@ -53,10 +54,11 @@ class MyVisitor():
      "Regex"])
 
     #leaf node and show value
-    self.leaf_value_class = set(["Identifier"])
+    self.leaf_value_class = set()
 
     self.node_order_list = []
     self.display = display
+    self.identifier_map = {}
     #self.string_value_list = []
 
   
@@ -130,7 +132,7 @@ class MyVisitor():
       print "%s%s" %(space, tag)
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
-
+    no_child_len = len(self.node_order_list)
     #print "process object ",node
     val = {}
     for child in node:
@@ -147,11 +149,8 @@ class MyVisitor():
           val['unknown'].append(child.__class__.__name__)
 
     output_node.value = val
-    #print "Object start"
-    #for item in result:
-    #  print item
-    #print "Object done"
-    
+    output_node.child_num = \
+      len(self.node_order_list) - no_child_len
     return val
 
   def visit_Array(self, node, level):
@@ -163,14 +162,15 @@ class MyVisitor():
     
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
-
+    no_child_len = len(self.node_order_list)
     v = self.visit_sensitive_children(node, level+1)
     output_node.value = v
+    output_node.child_num = \
+      len(self.node_order_list) - no_child_len
     #print "display array: %d" %len(v)
     #for item in v:
     #  print item
     #print "done displaying array"
-    #output_node.value = v
 
     return output_node
     
@@ -179,6 +179,29 @@ class MyVisitor():
     tag =  node.__class__.__name__
     output_node = ASTOutputNode(tag)
     output_node.value = node.value
+    output_node.child_num = 0
+    self.node_order_list.append(output_node)
+    #self.string_value_list.append(node.value)
+    if self.display:
+      print "%s%s" %(space, tag)
+    return output_node.value
+  
+  def create_next_identifier(self):
+    length = len(self.identifier_map)
+    return "Var_%d" %length 
+
+  def visit_Identifier(self, node, level):
+    space = ' '.ljust(level*2)
+    name = node.value
+    if name in self.identifier_map:
+      tag = self.identifier_map[name]
+    else:
+      tag = self.create_next_identifier()
+      self.identifier_map[name] = tag
+
+    output_node = ASTOutputNode(tag)
+    output_node.value = node.value
+    output_node.child_num = 0
     self.node_order_list.append(output_node)
     #self.string_value_list.append(node.value)
     if self.display:
@@ -191,6 +214,7 @@ class MyVisitor():
     
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
+    no_child_len = len(self.node_order_list)
 
     if self.display:
       print "%s%s" %(space, tag)
@@ -200,12 +224,23 @@ class MyVisitor():
       v = self.visit(child, level+1)
       if not v == None:
         rs['val'].append(v)
-
+        
+    output_node.child_num = \
+      len(self.node_order_list) - no_child_len
     return rs
 
   def visit_VarStatement(self, node, level):
+    #child_num = 0
     for child in node:
-      self.visit(child, level+1)
+      tmp = self.visit(child, level+1)
+      #child_num += tmp
+    return None
+
+  def visit_Program(self, node, level):
+    #child_num = 0
+    for child in node:
+      tmp = self.visit(child, level)
+      #child_num += tmp
     return None
 
   def leaf_value_visit(self, node, level):
@@ -215,6 +250,7 @@ class MyVisitor():
     self.node_order_list.append(output_node)
     if self.display:
       print "%s%s" %(space, tag)
+    output_node.child_num = 0
     return tag
 
   def leaf_novalue_visit(self, node, level):
@@ -222,6 +258,7 @@ class MyVisitor():
     tag = node.__class__.__name__
     output_node = ASTOutputNode(tag)
     output_node.value = node.value
+    output_node.child_num = 0
     self.node_order_list.append(output_node)
 
     if self.display:
@@ -233,14 +270,19 @@ class MyVisitor():
     tag = node.__class__.__name__
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
+    no_child_len = len(self.node_order_list)
+
     if self.display:
       print "%s%s" %(space, tag)
     rs = {'name':tag, 'val': []}
     for child in node:
       v = self.visit(child, level+1)
+      #child_num += tmp
       if not v == None:
         rs['val'].append(v)
     #v = '_'.join(rs)
+    output_node.child_num = \
+      len(self.node_order_list) - no_child_len
     return rs
 
   def visit(self, node, level):
@@ -280,6 +322,8 @@ def main():
   #scripts = "for (var i=0; i<10; i++) { var x = {'a':i,'b':'AAAAA'}; " +\
   #          "var b = [{'a':1},{'b':'WW'}]} \n "+\
   #          "ma(123,'ddf'); ma('fff')"
+  '''
+  #compare scripts in a file
   f = open(sys.argv[1])
   scripts = []
   for line in f:
@@ -315,6 +359,21 @@ def main():
       print ""
   if flag:
     print "DOOD"
+  '''
+  f = open(sys.argv[1])
+  script1 = f.read()
+  f = open(sys.argv[2])
+  script2 = f.read()
+  if script1 == script2:
+    print "two scripts are already the same"
+    return
+  l1 = analyzeJSCodes(script1, True)
+  l2 = analyzeJSCodes(script2)
+  print len(l1), len(l2)
+  #for i in range(len(l1)):
+  #  if l1[i].tag == l2[i].tag:
+  #    continue
+    #print "%d l1:%s || l2:%s" % (i, l1[i].tag, l2[i].tag )
 
   script = "var _gaq = _gaq || []; " +\
     "_gaq.push(['_setAccount', 'UA-XXXXX-X']);" +\
