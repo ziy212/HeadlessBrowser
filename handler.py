@@ -334,7 +334,7 @@ def main():
   #print "done reading"
   #extractAndStoreScriptsFromDOM("http://www.cnn.com/", contents )
   #fetchAndDisplayScriptsFromDB("http://www.google.com/")
-  extractAndStoreScriptsFromFileList(sys.argv[1])
+  #extractAndStoreScriptsFromFileList(sys.argv[1])
   '''
   print "First one"
   list1 = extractAndAnalyzeScriptsFromFile(sys.argv[1])
@@ -344,7 +344,7 @@ def main():
     if not item in list2:
       print "error"
   '''
-  #fetchAndProcessScriptsOfURLsFromFile(sys.argv[1],sys.argv[2])
+  fetchAndProcessScriptsOfURLsFromFile(sys.argv[1],sys.argv[2])
 
 if __name__ == "__main__":
   main()
