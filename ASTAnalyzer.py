@@ -151,6 +151,9 @@ class MyVisitor():
     output_node.value = val
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
+
+    #if self.display:
+    #  print "%s%d]" %(space, output_node.child_num)
     return val
 
   def visit_Array(self, node, level):
@@ -172,6 +175,8 @@ class MyVisitor():
     #  print item
     #print "done displaying array"
 
+    #if self.display:
+    #  print "%s%d]" %(space, output_node.child_num)
     return output_node
     
   def visit_String(self, node, level):
@@ -227,6 +232,9 @@ class MyVisitor():
         
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
+
+    #if self.display:
+    #  print "%s%d]" %(space, output_node.child_num)
     return rs
 
   def visit_VarStatement(self, node, level):
@@ -283,6 +291,8 @@ class MyVisitor():
     #v = '_'.join(rs)
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
+    #if self.display:
+    #  print "%s%d]" %(space, output_node.child_num)
     return rs
 
   def visit(self, node, level):

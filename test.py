@@ -91,6 +91,19 @@ def fetchAndDisplayScriptsFromDB(url):
   #  print inline
   #print len(inlines)
 
+class TemplateTree():
+  def __init__(self, nodes, key):
+    self.nodes = nodes
+    self.key = key
+    self.strings = {}
+    self.objects = {}
+    self.arrays = {}
+    self.identifiers = {}
+
+  def get_length(self):
+    return len(self.nodes)
+
+
 def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   f = open(path)
   scriptdict = {}
@@ -127,6 +140,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           scriptdict[key].append((inline,url, rs) )
           print "  item %s has %d distinct scripts" %(key, len(scriptdict[key]))
  
+  trees = []
   keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
   for key in keys:
     name = "%d_%s" %(len(scriptdict[key]),key)
@@ -134,8 +148,6 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
     for item in scriptdict[key]:
       fw.write(item[1]+"||"+str(item[0])+"\n")
     
-    print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
-
     #make sure all inlines in a template have same sequential size
     cur_len = 0
     seq_length = 0
@@ -150,16 +162,28 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         print "WARNING not equal size sequential for %s" % name
         consistent = False
         break
-
     if not consistent:
+      fw.write("Alert!!! not consistent")
+      fw.close()
+      continue
+    if seq_length == 0:
+      fw.write("Alert!!! seq length is zero")
+      fw.close()
       continue
 
-    #iterate tree list
+    if not isinstance(script_list[0][2][0], ASTOutputNode):
+      print "the inline is JSON script!"
+      fw.write("the inline is JSON script\n")
+      fw.close()
+      continue
+
+    tree = TemplateTree(script_list[0][2], key)
+    #iterate tree list and write string/array/object values
     script_length = len(script_list)
     for i in range(seq_length):
       try:
         if not isinstance(script_list[0][2][i], ASTOutputNode):
-          print "the inline is JSON script"
+          print "the inline is JSON script [shouldn't appear]"
           fw.write("the inline is JSON script\n")
           break
         if script_list[0][2][i].tag == "String":
@@ -168,18 +192,79 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
             val.append(script_list[j][2][i].value)
           item = 'string%d: %s' %(i, '||'.join(val))
           fw.write(item+"\n")
+          tree.strings[i] = val
         if script_list[0][2][i].tag == "Object":
           rs = analyzeObjectResultHelper(script_list, i)
-          for key in rs:
-            fw.write("object:%d: [%s]:%s\n" % (i, key, str(rs[key])) )
+          for k in rs:
+            fw.write("object:%d: [%s]:%s\n" % (i, k, str(rs[k])) )
+          tree.objects[i] = rs
         if script_list[0][2][i].tag == "Array":
           rs = analyzeArrayResultHelper(script_list, i)
-          for key in rs:
-            fw.write("array:%d: [%s]:%s\n" % (i, key, str(rs[key])) )
+          for k in rs:
+            fw.write("array:%d: [%s]:%s\n" % (i, k, str(rs[k])) )
+          tree.arrays[i] = rs
+        if script_list[0][2][i].tag.startswith("Var_"):
+          val = []
+          for j in range(script_length):
+            val.append(script_list[j][2][i].value)
+          item = 'identifier:%d %s' %(i, '||'.join(val))
+          fw.write(item+"\n")
+          tree.identifiers[i] = val
       except Exception as e:
-        print "excpetion in displaying strings %d %s " %(i, str(e)) 
+        print "excpetion in analyzing values %d %s " %(i, str(e)) 
 
+    print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
+    trees.append(tree)
+    
     fw.close()
+
+  trees = sorted(trees, key=lambda x:x.get_length())
+
+  #display trees
+  fw = open(os.path.join(dst_path,"trees"), 'w')
+  for i in range(len(trees)):
+    fw.write( "%.3d: %s\n" %(i, getTreeSeq(trees[i].nodes)))
+  fw.close()
+  print "generate %d trees " %(len(trees))
+  
+  count = 0
+  for i in range(len(trees)):
+    for j in range(i+1, len(trees)):
+      if isSubTree(trees[i], trees[j]):
+        print "tree %d is a subtree of %d " %(i, j)
+        count  += 1
+  print "%d subtrees " %count
+
+def isSubTree(left, right):
+  if len(left.nodes) > len(right.nodes):
+    tmp = left
+    left = right
+    right = tmp
+
+  left_len = len(left.nodes)
+  right_len = len(right.nodes)
+  for i in range(right_len):
+    if i + left_len > right_len:
+      break
+    if (left.nodes[0].tag == right.nodes[i].tag) and \
+      (left_len == right.nodes[i].child_num):
+      succ = True
+      for j in range(left_len):
+        if left.nodes[j].tag != right.nodes[i+j].tag:
+          succ = False
+          break
+      if succ:
+        return True
+
+  return False
+
+
+
+def getTreeSeq(nodes):
+  string = ""
+  for item in nodes:
+    string += '%s[%d] ' % (item.tag, item.child_num)
+  return string
 
 #script_list: [(script, url, node_list)]
 #return {key: [val]}
