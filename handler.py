@@ -96,6 +96,23 @@ def fetchAndDisplayScriptsFromDB(url):
 class TemplateTree():
   def __init__(self, nodes, key):
     self.nodes = nodes
+    
+    if key == None:
+      if nodes != None:
+        m = hashlib.md5()
+        if isinstance(nodes, dict):
+          for k in nodes:
+            m.update(k)
+        elif isinstance(nodes[0], ASTOutputNode):
+          for node in nodes:
+            m.update(node.tag)
+        else:
+          print "TemplateTree nodes format error: %s" \
+            %(nodes.__class__.__name__)
+          return None
+          
+        key = m.hexdigest()
+          
     self.key = key
     self.strings = {}
     self.objects = {}
@@ -243,6 +260,31 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         count  += 1
   print "%d subtrees " %count
 
+def getTrees(path):
+  f = open(path)
+  node_pattern = "(.+)\[(\d+)\]"
+  trees = []
+  for line in f:
+    tree_nodes = []
+    try:
+      line = line.split(':')[1].strip()
+      nodes = line.split()
+      for n in nodes:
+        m = re.match(node_pattern, n)
+        if m == None:
+          print "format error in getting tress: %s" %line
+          continue
+        node = ASTOutputNode(m.group(1))
+        node.child_num = int(m.group(2))
+        tree_nodes.append(node)
+      tree = TemplateTree(node, None)
+      print "read tree %d with key %s " %(len(trees), tree.key)
+      trees.append(tree)
+    except Exception as e:
+      print "exception in getTrees %s" %(str(e))
+  return trees
+    
+
 def isSubTree(left, right):
   if len(left.nodes) > len(right.nodes):
     tmp = left
@@ -265,8 +307,6 @@ def isSubTree(left, right):
         return True
 
   return False
-
-
 
 def getTreeSeq(nodes):
   string = ""
