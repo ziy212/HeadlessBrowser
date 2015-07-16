@@ -290,7 +290,7 @@ def isSubTree(left, right):
     tmp = left
     left = right
     right = tmp
-  if len(left) == 0:
+  if len(left.nodes) == 0:
     return False
   left_len = len(left.nodes)
   right_len = len(right.nodes)
