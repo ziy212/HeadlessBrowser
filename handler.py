@@ -10,7 +10,7 @@ from ASTAnalyzer import analyzeJSON
 from ASTAnalyzer import ASTOutputNode
 from base64 import b64encode
 from base64 import b64decode
-import sys, os
+import sys, os, re
 import hashlib
 
 def extractAndStoreScriptsFromFileList(file_list_path):
