@@ -290,9 +290,15 @@ def isSubTree(left, right):
     tmp = left
     left = right
     right = tmp
-
+  if len(left) == 0:
+    return False
   left_len = len(left.nodes)
   right_len = len(right.nodes)
+
+  if not isinstance(left.nodes[0], ASTOutputNode) or\
+    not isinstance(right.nodes[0], ASTOutputNode)
+    return False
+  
   for i in range(right_len):
     if i + left_len > right_len:
       break
