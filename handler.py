@@ -277,7 +277,7 @@ def getTrees(path):
         node = ASTOutputNode(m.group(1))
         node.child_num = int(m.group(2))
         tree_nodes.append(node)
-      tree = TemplateTree(node, None)
+      tree = TemplateTree(tree_nodes, None)
       print "read tree %d with key %s " %(len(trees), tree.key)
       trees.append(tree)
     except Exception as e:
