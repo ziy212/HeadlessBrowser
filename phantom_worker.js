@@ -51,7 +51,7 @@ taskWorker = (function (){
         ", failed objects: "+ result.failed_obj_count,
         ", landing-page: "+result.landing_page);
         //console.log(result.content);
-        send_contents(current_url, result.content)
+        send_contents(current_url, result.content, result.landing_page)
       }
     }
     catch (err) {
@@ -67,7 +67,7 @@ taskWorker = (function (){
     }
   };
 
-  send_contents = function (url, contents) {
+  send_contents = function (url, contents, landing_url) {
     var db_listener = "http://localhost:4040/api/web-contents/contents-store",
       sender, error = null, 
       json_header, encoded_contents, data;
@@ -81,7 +81,9 @@ taskWorker = (function (){
 
     console.log("[INFO] sending contents to DB: "+contents.length);
     encoded_contents = b64EncodeUnicode(contents);
-    data = '{"url":"' + encodeURIComponent(url) +'", "contents":"'+encoded_contents+'"}';
+    data = '{"url":"' + encodeURIComponent(url) +
+          '","landing_url":"' + encodeURIComponent(landing_url) +
+          '","contents":"'+encoded_contents+'"}';
     console.log("[DEBUG] "+encoded_contents.length);
     json_header = { "Content-Type": "application/json" };
     try{
@@ -134,9 +136,9 @@ taskWorker = (function (){
 
     page.onResourceReceived = function (res) {
       response_count++;
-      if (res.redirectURL) {
-          landing_page = res.redirectURL;
-      }
+      //if (res.redirectURL) {
+      //    landing_page = res.redirectURL;
+      //}
     };
 
     page.onResourceTimeout = function (e) {
@@ -145,9 +147,15 @@ taskWorker = (function (){
 
     console.log("[INFO] start browsing: "+url);
     try{
+      console.log("[DEBUG] start browsing: "+url);
       page.open(url, function (status) {
         //page.render('github.png');
+        console.log("[DEBUG] done opening: "+url+" "+status);
         content = page.content.slice(0);
+        if (status === "success"){
+          //console.log("PAGE:"+page);
+          landing_page = page.url.slice(0);
+        }    
         page.close();
         page = null;
         

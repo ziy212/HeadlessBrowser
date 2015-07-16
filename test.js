@@ -18,7 +18,7 @@
  page.open(url,function (status) {
 
     if (status !== 'success') {
-        console.log('Unable to post!');
+        console.log('Unable to post! '+status);
     } else {
         console.log(page.content.length);
         console.log(page.url);

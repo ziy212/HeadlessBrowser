@@ -187,14 +187,14 @@ class KodeFunHTTPRequestHandler(BaseHTTPRequestHandler):
 
 def main():
     queue = Queue.Queue()
-    #queue.put(Task("http://www.google.com",10))
-    queue.put(Task("http://www.sina.com.cn",10))
+    queue.put(Task("http://www.google.com",1))
+    #queue.put(Task("http://www.sina.com.cn",10))
     #queue.put(Task("http://www.qq.com",10))
-    queue.put(Task("http://www.weibo.com",10))
-    queue.put(Task("http://www.wsj.com",10))
+    #queue.put(Task("http://www.weibo.com",10))
+    #queue.put(Task("http://www.wsj.com",10))
     #queue.put(Task("http://www.baidu.com",10))
     #queue.put(Task("https://en.wikipedia.org/wiki/Main_Page",10))
-    queue.put(Task("http://www.yahoo.com",10))
+    #queue.put(Task("http://www.yahoo.com",10))
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:38.0) Gecko/20100101 Firefox/38.0"
     if len(sys.argv) != 3:
         print "usage: python phantom_manager.py log_dir phanton_worker.js_path"

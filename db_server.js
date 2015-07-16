@@ -18,6 +18,10 @@ var standardizeURL = function (url) {
 		var o = urlParse.parse(url)
 		var new_url = o.protocol+'//'+o.host+o.path;
 		//console.log(new_url);
+    var is_google = o.host.toLowerCase().indexOf("google.com")
+    if(is_google != -1){
+      return url;
+    }
 		return new_url;
 	}
 	catch (e) {
@@ -147,7 +151,7 @@ app.post('/api/web-contents/scripts-store', function (req, res) {
 
 /* Store Contents */
 app.post('/api/web-contents/contents-store', function (req, res) {
-	if ( !req.body.url || !req.body.contents ) {
+	if ( !req.body.url || !req.body.contents || !req.body.landing_url ) {
 		res.json({success : false});
 	}
   res.json({
@@ -156,18 +160,21 @@ app.post('/api/web-contents/contents-store', function (req, res) {
   	size : req.body.contents.length});
  
   try{
-  	var url = standardizeURL(req.body.url);
+    var url = standardizeURL(req.body.url);
+  	var landing_url = standardizeURL(req.body.landing_url);
 	  var contents = req.body.contents;
 	  var collection = db.get('contentscollection');
 	  collection.insert({
 	  	url : url,
+      landing_url : landing_url,
 	  	contents : contents
 	  }, function (err, doc) {
 	    if (err) {
 	        console.log("[FAIL] failed to insert into DB: "+url);
 	    }
 	    else {
-	        console.log("[SUCC] inserted into DB "+url);
+        console.log("[SUCC] inserted into DB "+
+          url+" landing_url:"+landing_url);
 	    }} );
   }
   catch (e) {
