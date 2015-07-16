@@ -296,7 +296,7 @@ def isSubTree(left, right):
   right_len = len(right.nodes)
 
   if not isinstance(left.nodes[0], ASTOutputNode) or\
-    not isinstance(right.nodes[0], ASTOutputNode)
+    not isinstance(right.nodes[0], ASTOutputNode):
     return False
   
   for i in range(right_len):
