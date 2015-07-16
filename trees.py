@@ -1,5 +1,6 @@
 from handler import TemplateTree
 from handler import getTrees
+from handler import isSubTree
 from handler import fetchScriptsFromDB
 from ASTAnalyzer import analyzeJSCodes
 from ASTAnalyzer import analyzeJSON
@@ -57,12 +58,26 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
   scriptdict = extractScriptsAndGenerateASTNodesFromURLList(url_path)
   match_script = 0
   nonmatch_script = 0
+  nonmatch_tree = 0
+  nomatch_list = []
   for key in scriptdict:
     if key in treedict:
       match_script += len(scriptdict[key])
     else:
-      nonmatch_script += len(scriptdict[key])
-  print "matched scripts:%d  nonmatched scripts:%d" %(match_script, nonmatch_script)
+      match_subtree = False
+      target = TemplateTree(scriptdict[key][0][2], key)
+      for k in treedict:
+        cur_tree = treedict[k]
+        if isSubTree(cur_tree, target):
+          print "match subtree"
+          match_subtree = True
+          break
+      if not match_subtree:
+        nonmatch_script += len(scriptdict[key])
+        nonmatch_tree += 1
+        print "non match script: %s " %(scriptdict[key][0][0])
+
+  print "matched scripts:%d  nonmatched scripts:%d[%d]" %(match_script, nonmatch_script, nonmatch_tree)
 
 def main():
   matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])

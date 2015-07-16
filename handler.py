@@ -284,7 +284,7 @@ def getTrees(path):
       print "exception in getTrees %s" %(str(e))
   return trees
     
-
+#TemplateTree
 def isSubTree(left, right):
   if len(left.nodes) > len(right.nodes):
     tmp = left
