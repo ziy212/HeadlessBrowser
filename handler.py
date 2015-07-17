@@ -103,12 +103,12 @@ class TemplateTree():
         if isinstance(nodes, dict):
           for k in nodes:
             m.update(k)
-        elif isinstance(nodes[0], ASTOutputNode):
+        elif nodes[0].__class__.__name__ == "ASTOutputNode":
           for node in nodes:
             m.update(node.tag)
         else:
-          print "TemplateTree nodes format error: %s" \
-            %(nodes.__class__.__name__)
+          print "TemplateTree nodes format error: %s %d %d" \
+            %(nodes[0].__class__, id(type(nodes[0])), id(ASTOutputNode))
           return None
           
         key = m.hexdigest()

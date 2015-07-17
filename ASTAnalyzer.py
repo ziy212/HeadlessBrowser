@@ -1,7 +1,7 @@
 from slimit.parser import Parser
 from slimit.visitors import nodevisitor
 from slimit import ast
-import itertools, sys, json
+import itertools, sys, json, copy, hashlib, os
 
 ############TESING CODE##############
 def nodeToString(node):
@@ -58,7 +58,10 @@ class MyVisitor():
 
     self.node_order_list = []
     self.display = display
-    self.identifier_map = {}
+    
+    self.current_id_map = {}
+    self.identifier_map = []
+    self.first_level_seq = []
     #self.string_value_list = []
 
   
@@ -83,7 +86,8 @@ class MyVisitor():
   def visit_sensitive_node(self, node, level):
     val = None
     if isinstance(node,ast.FunctionCall) or \
-        isinstance(node, ast.NewExpr):
+        isinstance(node, ast.NewExpr) or \
+        isinstance(node, ast.ExprStatement):
         self.visit(node, level)
         val = "[FunctionCall||NewExpr]"
     elif isinstance(node, ast.Object):
@@ -128,6 +132,9 @@ class MyVisitor():
     #self.display = True
     space = ' '.ljust(level*2)
     tag =  node.__class__.__name__
+    if level == 0:
+      self.current_id_map = {}
+      index = len(self.node_order_list)
     if self.display:
       print "%s%s" %(space, tag)
     output_node = ASTOutputNode(tag)
@@ -151,7 +158,9 @@ class MyVisitor():
     output_node.value = val
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
-
+    if level == 0:
+      self.identifier_map.append(self.current_id_map)
+      self.first_level_seq.append(self.node_order_list[index:] )
     #if self.display:
     #  print "%s%d]" %(space, output_node.child_num)
     return val
@@ -162,7 +171,10 @@ class MyVisitor():
     if self.display:
       print "%s%s" %(space, tag)
     #print "Array with %d child " % (len(node.items))
-    
+    if level == 0:
+      self.current_id_map = {}
+      index = len(self.node_order_list)
+
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
     no_child_len = len(self.node_order_list)
@@ -170,6 +182,10 @@ class MyVisitor():
     output_node.value = v
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
+
+    if level == 0:
+      self.identifier_map.append(self.current_id_map)
+      self.first_level_seq.append(self.node_order_list[index:])
     #print "display array: %d" %len(v)
     #for item in v:
     #  print item
@@ -192,17 +208,17 @@ class MyVisitor():
     return output_node.value
   
   def create_next_identifier(self):
-    length = len(self.identifier_map)
+    length = len(self.current_id_map)
     return "Var_%d" %length 
 
   def visit_Identifier(self, node, level):
     space = ' '.ljust(level*2)
     name = node.value
-    if name in self.identifier_map:
-      tag = self.identifier_map[name]
+    if name in self.current_id_map:
+      tag = self.current_id_map[name]
     else:
       tag = self.create_next_identifier()
-      self.identifier_map[name] = tag
+      self.current_id_map[name] = tag
 
     output_node = ASTOutputNode(tag)
     output_node.value = node.value
@@ -215,8 +231,12 @@ class MyVisitor():
 
   def visit_FunctionCall(self, node, level):
     space = ' '.ljust(level*2)
+    #tag = node.__class__.__name__ 
     tag = node.__class__.__name__ 
-    
+    if level == 0:
+      self.current_id_map = {}
+      index = len(self.node_order_list)
+
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
     no_child_len = len(self.node_order_list)
@@ -233,8 +253,9 @@ class MyVisitor():
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
 
-    #if self.display:
-    #  print "%s%d]" %(space, output_node.child_num)
+    if level == 0:
+      self.identifier_map.append(self.current_id_map)
+      self.first_level_seq.append(self.node_order_list[index:])
     return rs
 
   def visit_VarStatement(self, node, level):
@@ -242,6 +263,7 @@ class MyVisitor():
     for child in node:
       tmp = self.visit(child, level+1)
       #child_num += tmp
+    
     return None
 
   def visit_Program(self, node, level):
@@ -276,10 +298,14 @@ class MyVisitor():
   def generic_visit(self, node, level):
     space = ' '.ljust(level*2)
     tag = node.__class__.__name__
+    if level == 0:
+      self.current_id_map = {}
+      index = len(self.node_order_list)
+
     output_node = ASTOutputNode(tag)
     self.node_order_list.append(output_node)
     no_child_len = len(self.node_order_list)
-
+      
     if self.display:
       print "%s%s" %(space, tag)
     rs = {'name':tag, 'val': []}
@@ -291,6 +317,9 @@ class MyVisitor():
     #v = '_'.join(rs)
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
+    if level == 0:
+      self.identifier_map.append(self.current_id_map)
+      self.first_level_seq.append(self.node_order_list[index:])
     #if self.display:
     #  print "%s%d]" %(space, output_node.child_num)
     return rs
@@ -313,10 +342,46 @@ def analyzeJSCodes(script, display=False):
     tree = parser.parse(script)
     visitor = MyVisitor(display)
     visitor.visit(tree, 0)
+    #print "first_level_seq: %d" %len(visitor.first_level_seq)
     return visitor.node_order_list
   except Exception as e:
     print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
     return None
+
+def analyzeJSCodesBeta(script, display=False):
+  try:
+    parser = Parser()
+    tree = parser.parse(script)
+    visitor = MyVisitor(display)
+    visitor.visit(tree, 0)
+    #subtrees = {}
+    print "first_level_seq: %d" %len(visitor.first_level_seq)
+    #for subtree, we require variable name to be the same
+    '''
+    for seq in visitor.first_level_seq:
+      for node in seq:
+        if node.tag.startswith("Var_"):
+          node.tag = node.value
+    
+    for seq in visitor.first_level_seq:
+      m = hashlib.md5()
+      for node in seq:
+        m.update(node.tag)
+        #print node.tag
+      key = m.hexdigest()
+      
+      if not key in subtrees:
+        subtrees[key] = [seq]
+      else:
+        subtrees[key].append(seq)
+        #for s in subtrees[key]:
+        #  print key,'_'.join([node.tag for node in s])
+    '''
+      
+    return visitor.first_level_seq, visitor.identifier_map
+  except Exception as e:
+    print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
+    return None, None
 
 def analyzeJSON(script):
   try:
@@ -370,16 +435,43 @@ def main():
   if flag:
     print "DOOD"
   '''
-  f = open(sys.argv[1])
-  script1 = f.read()
-  f = open(sys.argv[2])
-  script2 = f.read()
-  if script1 == script2:
-    print "two scripts are already the same"
-    return
-  l1 = analyzeJSCodes(script1, True)
-  l2 = analyzeJSCodes(script2)
-  print len(l1), len(l2)
+  
+  #f = open(sys.argv[2])
+  #script2 = f.read()
+  #if script1 == script2:
+  #  print "two scripts are already the same"
+  #  return
+  from handler import TemplateTree
+  subtree_dict = {}
+  rs_list = []
+  dir_name = sys.argv[1]
+  files = os.listdir(dir_name)
+  for fname in files:
+    path = os.path.join(dir_name, fname)
+    f = open(path)
+    script = f.read()
+    seq_list, id_map_list = analyzeJSCodesBeta(script)
+    print "done processing file: %s %dsubtrees" %(fname, len(seq_list))
+
+    for index in range(len(seq_list)):
+      seq = seq_list[index]
+     
+      tree = TemplateTree(seq, None)
+      key = tree.key
+      if key in subtree_dict:
+        subtree_dict[key].append((script, index))
+      else:
+        subtree_dict[key] = [(script, index)]
+
+  total = 0
+  for key in subtree_dict:
+    total += len(subtree_dict[key])
+    print "dict: %s => %d times" %(key, len(subtree_dict[key]) )
+  print "%d blocks of scripts in %d trees" %(total, len(subtree_dict))
+  
+  #print "common %d" %common
+  #l2 = analyzeJSCodes(script2)
+  #print len(l1), len(l2)
   #for i in range(len(l1)):
   #  if l1[i].tag == l2[i].tag:
   #    continue
