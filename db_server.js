@@ -263,7 +263,11 @@ app.post('/api/web-contents/contents-fetch', function (req, res){
 	        console.log("[SUCC] " + docs.length +' items');
 	        for (index in docs) {
 	        	docs[index].url = querystring.escape(docs[index].url);
-	        	console.log("  [DEBUG] "+docs[index].url+" "+docs[index].contents.length);
+	        	if (docs[index].landing_url){
+	        		docs[index].landing_url = querystring.escape(docs[index].landing_url);
+	        	}
+	        	console.log("  [DEBUG] "+docs[index].url+" l:"+docs[index].landing_url+" "+
+	        		docs[index].contents.length);
 	        }
 	        res.json({
   					success : true,

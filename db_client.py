@@ -38,9 +38,19 @@ def fetchURLContents(url):
             db_result = json.loads(rs['result'])
             print "get %d items "%(len(db_result))
             for item in db_result:
+                if 'landing_url' in item:
+                    u1 = urllib.unquote_plus(item['url'])
+                    u2 = urllib.unquote_plus(item['landing_url'])
+                    h1 = urlparse.urlparse(u1).netloc.strip().lower()
+                    h2 = urlparse.urlparse(u2).netloc.strip().lower()
+                    print "urlhost: %s vs landingurlhost: %s " %(h1, h2)
+                    if h1 != h2:
+                        continue
                 decoded = base64.b64decode(item['contents'])
                 #print "%s size: %d" %(item['url'],len(decoded))
                 decoded_rs.append(decoded)
+            if len(decoded_rs) == 0:
+                return None
             return decoded_rs
         else:
             print "failed to fetch contents of url: "+url
@@ -254,8 +264,10 @@ def main():
 
     #'''
     #fetch contents from url file
-    url_file = open(sys.argv[1])
+    #url_file = open(sys.argv[1])
     rs = fetchURLContents(sys.argv[1])
+    print len(rs)
+    '''
     for url in url_file:
         url = url.strip()
         rs = fetchURLContents(url)
@@ -275,7 +287,7 @@ def main():
             f.write(item+'\n')
             f.close()
             count += 1
-    #'''
+    '''
 
     #client
     #storeScripts("http://www.example.com",\
