@@ -188,7 +188,7 @@ class MyVisitor():
     self.node_order_list.append(output_node)
     #self.string_value_list.append(node.value)
     if self.display:
-      print "%s%s" %(space, tag)
+      print "%s%s [%s]" %(space, tag, node.value)
     return output_node.value
   
   def create_next_identifier(self):
