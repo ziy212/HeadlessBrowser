@@ -222,14 +222,13 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
 
     #if not isinstance(script_list[0][2][0], ASTOutputNode):
     tree = script_list[0][2]
-    if tree.type != "js":
+    if tree.type == "json":
       print "the inline is not script!"
       fw.write("the inline is not script\n")
       fw.close()
-      continue
-    
-    fw.write("start analyzeing values")
-    
+      trees.append(tree)
+      continue  
+    fw.write("start analyzeing values\n")    
     #iterate tree list and write string/array/object values
     script_length = len(script_list)
     for i in range(seq_length):
@@ -245,31 +244,23 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           item = 'string%d: %s' %(i, ','.join(encoded_val))
           fw.write(item+"\n")
           tree.strings[i] = val
-        if script_list[0][2][i].tag == "Object":
+        if node.tag == "Object":
           rs = analyzeObjectResultHelper(script_list, i)
           for k in rs:
             encoded_val = [b64encode(x) for x in rs[k]]
             fw.write("object%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
           tree.objects[i] = rs
-        if script_list[0][2][i].tag == "Array":
+        if node.tag == "Array":
           rs = analyzeArrayResultHelper(script_list, i)
           for k in rs:
             encoded_val = [b64encode(x) for x in rs[k]]
             fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
           tree.arrays[i] = rs
-        if script_list[0][2][i].tag.startswith("Var_"):
-          val = []
-          for j in range(script_length):
-            val.append(script_list[j][2][i].value)
-          encoded_val = [b64encode(x) for x in val]
-          item = 'identifier%d: %s' %(i, ','.join(encoded_val))
-          fw.write(item+"\n")
-          tree.identifiers[i] = val
       except Exception as e:
         print "excpetion in analyzing values %d %s " %(i, str(e)) 
     
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
-    tree = scriptdict[key][0][2]
+    #tree = scriptdict[key][0][2]
     trees.append(tree)
     
     fw.close()
@@ -367,14 +358,15 @@ def getTreeSeq(nodes):
     string += '%s[%d] ' % (item.tag, item.child_num)
   return string
 
-#script_list: [(script, url, node_list)]
+#script_list: [(script, url, tree)]
 #return {key: [val]}
 def analyzeObjectResultHelper(script_list, index):
   script_len = len(script_list)
   rs = {}
   for i in range(script_len):
     try:
-      obj = script_list[i][2][index].value
+      tree = script_list[i][2]
+      obj = tree.nodes[index].value
       for k in obj:
         if not k in rs:
           rs[k] = [obj[k]]

@@ -80,9 +80,11 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
         if not tree.key in scriptdict:
           scriptdict[tree.key] = [(json.dumps(rs), url, tree, -1)]
           total_json_count[tree.key] = 1
+          total_script_count[tree.key] = 1
         else:
           scriptdict[tree.key].append((inline, url, tree, -1))
           total_json_count[tree.key] += 1
+          total_script_count[tree.key] += 1
       else:
         for index in range(len(rs)):
           seq = rs[index]
