@@ -49,6 +49,20 @@ def extractScriptsAndGenerateASTNodesFromURLList(url_path):
   f.close()
   return scriptdict
 
+def compareTrees(tree_path1, tree_path2):
+  tree1 = getTrees(tree_path1)
+  tree2 = getTrees(tree_path2)
+  treedict = {}
+  for t in tree1:
+    treedict[t.key] = t
+  match = 0
+  non_match = 0
+  for t in tree2:
+    if t in treedict:
+      match += 1
+    else:
+      non_match += 1
+  print "match:%d nonmatch:%d" %(match, non_match)
 
 def matchTreesWithScriptsFromURLList(tree_path, url_path):
   trees = getTrees(tree_path)
@@ -80,7 +94,8 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
   print "matched scripts:%d  nonmatched scripts:%d[%d]" %(match_script, nonmatch_script, nonmatch_tree)
 
 def main():
-  matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  compareTrees(sys.argv[1], sys.argv[2])
 
 
 if __name__ == "__main__":

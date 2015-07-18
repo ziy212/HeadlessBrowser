@@ -367,7 +367,7 @@ def analyzeJSCodesFinerBlock(script, display=False):
   try:
     parser = Parser()
     tree = parser.parse(script)
-    print tree.children()
+    #print tree.children()
     visitor = MyVisitor( display)
     visitor.visit(tree, 0)
     #subtrees = {}
