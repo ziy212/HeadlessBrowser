@@ -222,7 +222,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
 
     #if not isinstance(script_list[0][2][0], ASTOutputNode):
     tree = script_list[0][2]
-    if tree.type != "js"
+    if tree.type != "js":
       print "the inline is not script!"
       fw.write("the inline is not script\n")
       fw.close()
