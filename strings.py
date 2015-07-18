@@ -1,6 +1,8 @@
 import sys
 from enum import Enum
 
+MIN_SAMPLE_SIZE = 10
+
 class StringType(Enum):
   CONST = 1
   ENUM = 2
@@ -9,5 +11,8 @@ class StringType(Enum):
   URI_PATH = 5
   PLAIN_TEXT = 6
 
+
 def analyzeStringListType(strings):
-  pass
+  if len(strings) < MIN_SAMPLE_SIZE:
+  	print >>sys.stderr, "error "
+  	return None

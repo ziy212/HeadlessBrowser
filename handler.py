@@ -203,7 +203,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
     consistent = True
     script_list = scriptdict[key]
     for i in range(len(script_list)):
-      cur_len = len(script_list[i][2])
+      cur_len = len(script_list[i][2].nodes)
       if seq_length == 0:
         seq_length = cur_len
         continue
@@ -381,7 +381,8 @@ def analyzeArrayResultHelper(script_list, index):
   rs = {}
   for i in range(script_len):
     try:
-      arr = script_list[i][2][index].value
+      tree = script_list[i][2]
+      arr = tree.nodes[index].value
       for obj in arr:
         #obj = arr[j]
         if isinstance(obj, basestring):
