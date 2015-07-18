@@ -66,9 +66,9 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
       is_json = False
       #rs = analyzeJSCodes(inline)
       rs, sc = analyzeJSCodesFinerBlock(inline)
-      if rs == None:
-        rs = analyzeJSON(inline)
-        is_json = True
+      #if rs == None:
+      #  rs = analyzeJSON(inline)
+      #  is_json = True
       if rs == None:
         continue
       
@@ -98,7 +98,6 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
             if not sc[index] in contents: 
               scriptdict[key].append((sc[index],url, tree, index))
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
-              total_uniq_script_blocks += 1
             total_script_count[key] ＋= 1
   return scriptdict, total_script_count
 
@@ -124,28 +123,24 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
     treedict[tree.key] = tree
   scriptdict, count_dict = extractScriptsAndGenerateASTNodesFromURLListFinerBlock(url_path)
   match_script = 0
+  match_uniq_script = 0
   nonmatch_script = 0
   nonmatch_uniq_script = 0
   nonmatch_tree = 0
   nomatch_list = []
   for key in scriptdict:
     if key in treedict:
-      match_script += len(scriptdict[key])
+      match_uniq_script += len(scriptdict[key])
+      match_script += count_dict[key]
     else:
-      match_subtree = False
-      target = TemplateTree(scriptdict[key][0][2], key)
-      for k in treedict:
-        cur_tree = treedict[k]
-        if isSubTree(cur_tree, target):
-          print "match subtree"
-          match_subtree = True
-          break
-      if not match_subtree:
-        nonmatch_script += len(scriptdict[key])
-        nonmatch_tree += 1
-        print "non match script: %s " %(scriptdict[key][0][0])
+      nonmatch_uniq_script += len(scriptdict[key])
+      nonmatch_script += count_dict[key]
+      nonmatch_tree += 1
+      print "non match script: %s " %(scriptdict[key][0][0])
 
-  print "matched scripts:%d  nonmatched scripts:%d[%d]" %(match_script, nonmatch_script, nonmatch_tree)
+
+  print "matched scripts:%d[%d] \n nonmatched scripts:%d[%d] nonmatch_tree:%d" \
+    %(match_uniq_script,match_script, nonmatch_uniq_script, nonmatch_script, nonmatch_tree)
 
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
