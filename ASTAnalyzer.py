@@ -42,6 +42,10 @@ class ASTOutputNode():
   def __ne__(self, other):
     return not self.__eq__(other)
 
+
+
+####################SCRIPT VISITOR##############
+
 class MyVisitor():
   def __init__(self, display=True):
     #only show class name and iterate children
@@ -62,6 +66,9 @@ class MyVisitor():
     self.current_id_map = {}
     self.identifier_map = []
     self.first_level_seq = []
+    self.scripts = []
+    #self.root = tree
+    #self.subtrees = []
     #self.string_value_list = []
 
   
@@ -135,6 +142,7 @@ class MyVisitor():
     if level == 0:
       self.current_id_map = {}
       index = len(self.node_order_list)
+
     if self.display:
       print "%s%s" %(space, tag)
     output_node = ASTOutputNode(tag)
@@ -161,6 +169,8 @@ class MyVisitor():
     if level == 0:
       self.identifier_map.append(self.current_id_map)
       self.first_level_seq.append(self.node_order_list[index:] )
+    
+      self.scripts.append(node.to_ecma())
     #if self.display:
     #  print "%s%d]" %(space, output_node.child_num)
     return val
@@ -186,6 +196,7 @@ class MyVisitor():
     if level == 0:
       self.identifier_map.append(self.current_id_map)
       self.first_level_seq.append(self.node_order_list[index:])
+      self.scripts.append(node.to_ecma())
     #print "display array: %d" %len(v)
     #for item in v:
     #  print item
@@ -256,6 +267,7 @@ class MyVisitor():
     if level == 0:
       self.identifier_map.append(self.current_id_map)
       self.first_level_seq.append(self.node_order_list[index:])
+      self.scripts.append(node.to_ecma())
     return rs
 
   def visit_VarStatement(self, node, level):
@@ -287,6 +299,7 @@ class MyVisitor():
     space = ' '.ljust(level*2)
     tag = node.__class__.__name__
     output_node = ASTOutputNode(tag)
+    
     output_node.value = node.value
     output_node.child_num = 0
     self.node_order_list.append(output_node)
@@ -318,8 +331,10 @@ class MyVisitor():
     output_node.child_num = \
       len(self.node_order_list) - no_child_len
     if level == 0:
+      #print "LEVEL0:",self.root.__class__.__name__
       self.identifier_map.append(self.current_id_map)
       self.first_level_seq.append(self.node_order_list[index:])
+      self.scripts.append(node.to_ecma())
     #if self.display:
     #  print "%s%d]" %(space, output_node.child_num)
     return rs
@@ -340,7 +355,7 @@ def analyzeJSCodes(script, display=False):
   try:
     parser = Parser()
     tree = parser.parse(script)
-    visitor = MyVisitor(display)
+    visitor = MyVisitor( display)
     visitor.visit(tree, 0)
     #print "first_level_seq: %d" %len(visitor.first_level_seq)
     return visitor.node_order_list
@@ -348,37 +363,19 @@ def analyzeJSCodes(script, display=False):
     print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
     return None
 
-def analyzeJSCodesBeta(script, display=False):
+def analyzeJSCodesFinerBlock(script, display=False):
   try:
     parser = Parser()
     tree = parser.parse(script)
-    visitor = MyVisitor(display)
+    print tree.children()
+    visitor = MyVisitor( display)
     visitor.visit(tree, 0)
     #subtrees = {}
-    print "first_level_seq: %d" %len(visitor.first_level_seq)
-    #for subtree, we require variable name to be the same
-    '''
-    for seq in visitor.first_level_seq:
-      for node in seq:
-        if node.tag.startswith("Var_"):
-          node.tag = node.value
-    
-    for seq in visitor.first_level_seq:
-      m = hashlib.md5()
-      for node in seq:
-        m.update(node.tag)
-        #print node.tag
-      key = m.hexdigest()
-      
-      if not key in subtrees:
-        subtrees[key] = [seq]
-      else:
-        subtrees[key].append(seq)
-        #for s in subtrees[key]:
-        #  print key,'_'.join([node.tag for node in s])
-    '''
-      
-    return visitor.first_level_seq, visitor.identifier_map
+    #print "first_level_seq: %d" %len(visitor.first_level_seq)
+    if len(visitor.first_level_seq) != len(visitor.scripts):
+      print >>sys.stderr, "error parsing script: scripts and seqs length inconsistent "+script[:100]
+      return None, None
+    return visitor.first_level_seq, visitor.scripts
   except Exception as e:
     print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
     return None, None
@@ -450,7 +447,7 @@ def main():
     path = os.path.join(dir_name, fname)
     f = open(path)
     script = f.read()
-    seq_list, id_map_list = analyzeJSCodesBeta(script)
+    seq_list = analyzeJSCodesFinerBlock(script)
     print "done processing file: %s %dsubtrees" %(fname, len(seq_list))
 
     for index in range(len(seq_list)):

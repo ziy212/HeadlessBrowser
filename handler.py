@@ -6,6 +6,7 @@ from db_client import fetchScripts
 from db_client import fetchURLContents
 from db_client import findAverageContents
 from ASTAnalyzer import analyzeJSCodes
+from ASTAnalyzer import analyzeJSCodesFinerBlock
 from ASTAnalyzer import analyzeJSON
 from ASTAnalyzer import ASTOutputNode
 from base64 import b64encode
@@ -126,6 +127,8 @@ class TemplateTree():
 def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   f = open(path)
   scriptdict = {}
+  total_script_blocks = 0
+  total_uniq_script_blocks = 0
   for line in f:
     url = line.strip()
     print "process url "+url
@@ -136,28 +139,39 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
     for inline in inlines:
       #print "INLINE:%s" % inline
       is_json = False
-      rs = analyzeJSCodes(inline)
+      #rs = analyzeJSCodes(inline)
+      rs, sc = analyzeJSCodesFinerBlock(inline)
       if rs == None:
         rs = analyzeJSON(inline)
         is_json = True
       if rs == None:
         continue
-      m = hashlib.md5()
-      if not is_json:
-        for node in rs:
-          m.update(node.tag)
+      
+      if is_json:
+        tree = TemplateTree(seq, None)
+        if tree.key in scriptdict:
+          scriptdict[tree.key] = [(inline, url, tree, -1)]
+        else:
+          contents = [x[0] for x in scriptdict[key]]
+          if not inline in contents:
+            scriptdict[tree.key].append((inline, url, tree, -1))
+            total_uniq_script_blocks += 1
+        total_script_blocks += 1
       else:
-        for k in rs:
-           m.update(k)
-      key = m.hexdigest()
-      if not key in scriptdict:
-        scriptdict[key] = [(inline,url,rs)]
-        print "  add key  %s" %key
-      else:
-        contents = [x[0] for x in scriptdict[key]]
-        if not inline in contents:
-          scriptdict[key].append((inline,url, rs) )
-          print "  item %s has %d distinct scripts" %(key, len(scriptdict[key]))
+        for index in range(len(rs)):
+          total_script_blocks += 1
+          seq = rs[index]
+          tree = TemplateTree(seq, None)
+          key = tree.key
+          if not key in scriptdict:
+            scriptdict[key] = [(sc[index], url, tree, index)]
+            print "  add key  %s" %key
+          else:
+            contents = [x[0] for x in scriptdict[key]]
+            if not sc[index] in contents: 
+              scriptdict[key].append((sc[index],url, tree, index))
+              print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
+              total_uniq_script_blocks += 1
  
   trees = []
   keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
@@ -165,8 +179,9 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
     name = "%d_%s" %(len(scriptdict[key]),key)
     fw = open(os.path.join(dst_path,name), 'w')
     for item in scriptdict[key]:
-      fw.write(item[1]+"||"+str(item[0])+"\n")
+      fw.write(item[1]+"||"+str(item[3])+"  "+str(item[0])+"\n")
     
+    '''
     #make sure all inlines in a template have same sequential size
     cur_len = 0
     seq_length = 0
@@ -237,8 +252,9 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           tree.identifiers[i] = val
       except Exception as e:
         print "excpetion in analyzing values %d %s " %(i, str(e)) 
-
+    '''
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
+    tree = scriptdict[key][0][2]
     trees.append(tree)
     
     fw.close()
@@ -250,15 +266,16 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   for i in range(len(trees)):
     fw.write( "%.3d: %s\n" %(i, getTreeSeq(trees[i].nodes)))
   fw.close()
-  print "generate %d trees " %(len(trees))
+  print "generate %d trees for %d scripts uniqe[%d]" \
+    %(len(trees), total_script_blocks, total_uniq_script_blocks)
   
-  count = 0
-  for i in range(len(trees)):
-    for j in range(i+1, len(trees)):
-      if isSubTree(trees[i], trees[j]):
-        print "tree %d is a subtree of %d " %(i, j)
-        count  += 1
-  print "%d subtrees " %count
+  #count = 0
+  #for i in range(len(trees)):
+  #  for j in range(i+1, len(trees)):
+  #    if isSubTree(trees[i], trees[j]):
+  #      print "tree %d is a subtree of %d " %(i, j)
+  #      count  += 1
+  #print "%d subtrees " %count
 
 def getTrees(path):
   f = open(path)
