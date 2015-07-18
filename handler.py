@@ -150,7 +150,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
       
       if is_json:
         tree = TemplateTree(rs, None)
-        if tree.key in scriptdict:
+        if not tree.key in scriptdict:
           scriptdict[tree.key] = [(inline, url, tree, -1)]
         else:
           contents = [x[0] for x in scriptdict[key]]
