@@ -383,9 +383,10 @@ def analyzeJSCodesFinerBlock(script, display=False):
 def analyzeJSON(script):
   try:
     obj = json.loads(script)
-    rs = sorted(obj.keys())
-    rs.insert(0, "JSON")
-    return rs
+    #rs = sorted(obj.keys())
+    #rs.insert(0, "JSON")
+    #return rs
+    return obj
   except Exception as e:
     print >>sys.stderr, "error parsing json: "+str(e)+" "+script[:100]
     return None

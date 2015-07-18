@@ -49,6 +49,59 @@ def extractScriptsAndGenerateASTNodesFromURLList(url_path):
   f.close()
   return scriptdict
 
+def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
+  f = open(path)
+  scriptdict = {}
+  total_script_count = {}
+  total_uniq_script_blocks = 0
+  for line in f:
+    url = line.strip()
+    print "process url "+url
+    hosts, inlines = fetchScriptsFromDB(url)
+    if inlines==None or len(inlines) ==0:
+      print "no inlines for "+url
+      continue
+    for inline in inlines:
+      #print "INLINE:%s" % inline
+      is_json = False
+      #rs = analyzeJSCodes(inline)
+      rs, sc = analyzeJSCodesFinerBlock(inline)
+      if rs == None:
+        rs = analyzeJSON(inline)
+        is_json = True
+      if rs == None:
+        continue
+      
+      if is_json:
+        tree = TemplateTree(seq, None)
+        if not tree.key in scriptdict:
+          scriptdict[tree.key] = [(inline, url, tree, -1)]
+          total_script_count[tree.key] = 1
+        else:
+          contents = [x[0] for x in scriptdict[key]]
+          if not inline in contents:
+            scriptdict[tree.key].append((inline, url, tree, -1))
+            total_uniq_script_blocks += 1
+          total_script_count[tree.key] += 1
+      else:
+        for index in range(len(rs)):
+          total_script_blocks += 1
+          seq = rs[index]
+          tree = TemplateTree(seq, None)
+          key = tree.key
+          if not key in scriptdict:
+            scriptdict[key] = [(sc[index], url, tree, index)]
+            total_script_count[key] = 1
+            print "  add key  %s" %key
+          else:
+            contents = [x[0] for x in scriptdict[key]]
+            if not sc[index] in contents: 
+              scriptdict[key].append((sc[index],url, tree, index))
+              print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
+              total_uniq_script_blocks += 1
+            total_script_count[key] ＋= 1
+  return scriptdict, total_script_count
+
 def compareTrees(tree_path1, tree_path2):
   tree1 = getTrees(tree_path1)
   tree2 = getTrees(tree_path2)
@@ -69,9 +122,10 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
   treedict = {} 
   for tree in trees:
     treedict[tree.key] = tree
-  scriptdict = extractScriptsAndGenerateASTNodesFromURLList(url_path)
+  scriptdict, count_dict = extractScriptsAndGenerateASTNodesFromURLListFinerBlock(url_path)
   match_script = 0
   nonmatch_script = 0
+  nonmatch_uniq_script = 0
   nonmatch_tree = 0
   nomatch_list = []
   for key in scriptdict:

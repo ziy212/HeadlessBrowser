@@ -102,7 +102,8 @@ class TemplateTree():
       if nodes != None:
         m = hashlib.md5()
         if isinstance(nodes, dict):
-          for k in nodes:
+          keys = sorted(nodes.keys())
+          for k in keys:
             m.update(k)
         elif nodes[0].__class__.__name__ == "ASTOutputNode":
           for node in nodes:
@@ -148,7 +149,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         continue
       
       if is_json:
-        tree = TemplateTree(seq, None)
+        tree = TemplateTree(rs, None)
         if tree.key in scriptdict:
           scriptdict[tree.key] = [(inline, url, tree, -1)]
         else:
