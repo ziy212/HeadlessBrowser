@@ -86,7 +86,6 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
           total_script_count[tree.key] += 1
       else:
         for index in range(len(rs)):
-          total_script_blocks += 1
           seq = rs[index]
           tree = TemplateTree(seq, None)
           key = tree.key
