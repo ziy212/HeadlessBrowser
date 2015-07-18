@@ -121,7 +121,7 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
   treedict = {} 
   for tree in trees:
     treedict[tree.key] = tree
-  scriptdict, count_dict = extractScriptsAndGenerateASTNodesFromURLListFinerBlock(url_path)
+  scriptdict, count_dict, json_count = extractScriptsAndGenerateASTNodesFromURLListFinerBlock(url_path)
   match_script = 0
   match_uniq_script = 0
   nonmatch_script = 0

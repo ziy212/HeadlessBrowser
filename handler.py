@@ -197,7 +197,6 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
     for item in scriptdict[key]:
       fw.write(item[1]+"||"+str(item[3])+"  "+str(item[0])+"\n")
     
-    '''
     #make sure all inlines in a template have same sequential size
     cur_len = 0
     seq_length = 0
@@ -221,26 +220,26 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
       fw.close()
       continue
 
-    if not isinstance(script_list[0][2][0], ASTOutputNode):
-      print "the inline is JSON script!"
-      fw.write("the inline is JSON script\n")
+    #if not isinstance(script_list[0][2][0], ASTOutputNode):
+    tree = script_list[0][2]
+    if tree.type != "js"
+      print "the inline is not script!"
+      fw.write("the inline is not script\n")
       fw.close()
       continue
     
     fw.write("start analyzeing values")
-    tree = TemplateTree(script_list[0][2], key)
+    
     #iterate tree list and write string/array/object values
     script_length = len(script_list)
     for i in range(seq_length):
+      node = script_list[0][2].nodes[i]
       try:
-        if not isinstance(script_list[0][2][i], ASTOutputNode):
-          print "the inline is JSON script [shouldn't appear]"
-          fw.write("the inline is JSON script\n")
-          break
-        if script_list[0][2][i].tag == "String":
+        if node.tag == "String":
           val = []
           for j in range(script_length):
-            val.append(script_list[j][2][i].value)
+            t = script_list[j][2]
+            val.append(t.nodes[i].value)
           encoded_val = [b64encode(x) for x in val]
           #item = 'string%d: %s' %(i, '||'.join(val))
           item = 'string%d: %s' %(i, ','.join(encoded_val))
@@ -268,7 +267,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           tree.identifiers[i] = val
       except Exception as e:
         print "excpetion in analyzing values %d %s " %(i, str(e)) 
-    '''
+    
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
     tree = scriptdict[key][0][2]
     trees.append(tree)
