@@ -144,7 +144,8 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
 
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  getTrees(sys.argv[1])
 
 
 if __name__ == "__main__":

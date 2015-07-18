@@ -11,7 +11,7 @@ from ASTAnalyzer import analyzeJSON
 from ASTAnalyzer import ASTOutputNode
 from base64 import b64encode
 from base64 import b64decode
-import sys, os, re
+import sys, os, re, json
 import hashlib
 
 def extractAndStoreScriptsFromFileList(file_list_path):
@@ -135,6 +135,9 @@ class TemplateTree():
 
   def get_length(self):
     return len(self.nodes)
+
+  def get_data(self):
+    pass
 
 
 def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
@@ -274,12 +277,16 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
 
   trees = sorted(trees, key=lambda x:x.get_length())
 
-  #display trees
+  #write trees
   fw = open(os.path.join(dst_path,"trees"), 'w')
+  fw_json = open(os.path.join(dst_path,"jsons"), 'w')
   for i in range(len(trees)):
     if trees[i].type == "js":
       fw.write( "%.3d: %s\n" %(i, getTreeSeq(trees[i].nodes)))
+    elif trees[i].type == 'json':
+      fw.write("%.3d: %s\n" % (i, json.dumps(trees[i].nodes)))
   fw.close()
+  fw_json.close()
   print "generate %d trees for %d scripts uniqe[%d]" \
     %(len(trees), total_script_blocks, total_uniq_script_blocks)
   
@@ -298,7 +305,17 @@ def getTrees(path):
   for line in f:
     tree_nodes = []
     try:
-      line = line.split(':')[1].strip()
+      tmp = line.split(':')
+      try:
+        line = ':'.join(tmp[1:])
+        obj = json.loads(line)
+        tree = TemplateTree(obj, None)
+        print "read JSON tree %d with key %s " %(len(trees), tree.key)
+        trees.append(tree)
+        continue
+      except Exception as ee:
+        pass
+      line = tmp[1].strip()
       nodes = line.split()
       for n in nodes:
         m = re.match(node_pattern, n)
