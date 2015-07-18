@@ -12,7 +12,18 @@ class StringType(Enum):
   PLAIN_TEXT = 6
 
 
-def analyzeStringListType(strings):
-  if len(strings) < MIN_SAMPLE_SIZE:
+def analyzeStringListType(sample_list):
+  if len(sample_list) < MIN_SAMPLE_SIZE:
   	print >>sys.stderr, "error "
   	return None
+
+  sample_dict = {}
+  for item in sample_list:
+  	item = item.strip()
+  	if not item in sample_list:
+  		sample_dict[item] = 1
+  	else:
+  		sample_dict[item] += 1
+
+  if len(sample_dict) == 1:
+  	return StringType.CONST
