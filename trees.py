@@ -8,7 +8,7 @@ from ASTAnalyzer import analyzeJSON
 from ASTAnalyzer import ASTOutputNode
 from base64 import b64encode
 from base64 import b64decode
-import sys, os, re
+import sys, os, re, json
 import hashlib
 
 #{tree_key: [(script, url, AST_nodes)]}
@@ -55,6 +55,8 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
   scriptdict = {}
   total_script_count = {}
   total_uniq_script_blocks = 0
+  total_json_count = {}
+  total_uniq_json_blocks = 0
   for line in f:
     url = line.strip()
     print "process url "+url
@@ -67,23 +69,20 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
       is_json = False
       #rs = analyzeJSCodes(inline)
       rs, sc = analyzeJSCodesFinerBlock(inline)
-      #if rs == None:
-      #  rs = analyzeJSON(inline)
-      #  is_json = True
+      if rs == None:
+        rs = analyzeJSON(inline)
+        is_json = True
       if rs == None:
         continue
       
       if is_json:
-        tree = TemplateTree(seq, None)
+        tree = TemplateTree(rs, None)
         if not tree.key in scriptdict:
-          scriptdict[tree.key] = [(inline, url, tree, -1)]
-          total_script_count[tree.key] = 1
+          scriptdict[tree.key] = [(json.dumps(rs), url, tree, -1)]
+          total_json_count[tree.key] = 1
         else:
-          contents = [x[0] for x in scriptdict[key]]
-          if not inline in contents:
-            scriptdict[tree.key].append((inline, url, tree, -1))
-            total_uniq_script_blocks += 1
-          total_script_count[tree.key] += 1
+          scriptdict[tree.key].append((inline, url, tree, -1))
+          total_json_count[tree.key] += 1
       else:
         for index in range(len(rs)):
           seq = rs[index]
@@ -99,7 +98,8 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
               scriptdict[key].append((sc[index],url, tree, index))
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
             total_script_count[key] += 1
-  return scriptdict, total_script_count
+
+  return scriptdict, total_script_count, total_json_count
 
 def compareTrees(tree_path1, tree_path2):
   tree1 = getTrees(tree_path1)
