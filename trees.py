@@ -58,7 +58,7 @@ def compareTrees(tree_path1, tree_path2):
   match = 0
   non_match = 0
   for t in tree2:
-    if t in treedict:
+    if t.key in treedict:
       match += 1
     else:
       non_match += 1
