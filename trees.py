@@ -3,6 +3,7 @@ from handler import getTrees
 from handler import isSubTree
 from handler import fetchScriptsFromDB
 from ASTAnalyzer import analyzeJSCodes
+from ASTAnalyzer import analyzeJSCodesFinerBlock
 from ASTAnalyzer import analyzeJSON
 from ASTAnalyzer import ASTOutputNode
 from base64 import b64encode
@@ -144,7 +145,7 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
 
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  compareTrees(sys.argv[1], sys.argv[2])
+  matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
 
 
 if __name__ == "__main__":
