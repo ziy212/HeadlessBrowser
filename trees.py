@@ -98,7 +98,7 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
             if not sc[index] in contents: 
               scriptdict[key].append((sc[index],url, tree, index))
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
-            total_script_count[key] ＋= 1
+            total_script_count[key] += 1
   return scriptdict, total_script_count
 
 def compareTrees(tree_path1, tree_path2):
