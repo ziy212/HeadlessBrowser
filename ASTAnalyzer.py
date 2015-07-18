@@ -231,6 +231,8 @@ class MyVisitor():
       tag = self.create_next_identifier()
       self.current_id_map[name] = tag
 
+    tag = name
+
     output_node = ASTOutputNode(tag)
     output_node.value = node.value
     output_node.child_num = 0
@@ -448,13 +450,16 @@ def main():
     path = os.path.join(dir_name, fname)
     f = open(path)
     script = f.read()
-    seq_list = analyzeJSCodesFinerBlock(script)
+    seq_list, sc_list = analyzeJSCodesFinerBlock(script)
     print "done processing file: %s %dsubtrees" %(fname, len(seq_list))
 
     for index in range(len(seq_list)):
       seq = seq_list[index]
      
       tree = TemplateTree(seq, None)
+      if tree == None:
+        print "failed contructing tree: ",sc_list[index]
+        continue
       key = tree.key
       if key in subtree_dict:
         subtree_dict[key].append((script, index))
