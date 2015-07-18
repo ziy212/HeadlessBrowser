@@ -97,15 +97,27 @@ def fetchAndDisplayScriptsFromDB(url):
 class TemplateTree():
   def __init__(self, nodes, key):
     self.nodes = nodes
-    
+    if (nodes == None) or (len(nodes)==0):
+      print >> sys.stderr, "TemplateTree nodes is null or length is zero"
+      return None
+
+    if isinstance(nodes, dict):
+      self.type = "json"
+    elif nodes[0].__class__.__name__ == "ASTOutputNode":
+      self.type = "js"
+    else:
+      print >> sys.stderr, "TemplateTree nodes format error: %s" \
+            %(nodes[0].__class__)
+      return None
+
     if key == None:
       if nodes != None:
         m = hashlib.md5()
-        if isinstance(nodes, dict):
+        if self.type == "json":
           keys = sorted(nodes.keys())
           for k in keys:
             m.update(k)
-        elif nodes[0].__class__.__name__ == "ASTOutputNode":
+        elif self.type == "js":
           for node in nodes:
             m.update(node.tag)
         else:
@@ -114,8 +126,8 @@ class TemplateTree():
           return None
           
         key = m.hexdigest()
-          
     self.key = key
+      
     self.strings = {}
     self.objects = {}
     self.arrays = {}
@@ -265,7 +277,8 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   #display trees
   fw = open(os.path.join(dst_path,"trees"), 'w')
   for i in range(len(trees)):
-    fw.write( "%.3d: %s\n" %(i, getTreeSeq(trees[i].nodes)))
+    if trees[i].type == "js":
+      fw.write( "%.3d: %s\n" %(i, getTreeSeq(trees[i].nodes)))
   fw.close()
   print "generate %d trees for %d scripts uniqe[%d]" \
     %(len(trees), total_script_blocks, total_uniq_script_blocks)
