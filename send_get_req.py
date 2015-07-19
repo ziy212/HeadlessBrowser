@@ -4,7 +4,7 @@ import sys
 
 
 def sendTask(url, times):
-	template = "http://localhost:8081/task?url=%s&times=%d"
+	template = "http://localhost:8082/task?url=%s&times=%d"
 	url_par = urllib.quote(url)
 	times_par = int(times)
 	url = template%(url_par,times_par)
