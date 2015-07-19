@@ -40,6 +40,37 @@ def preProcessGoogleURLList(url_list):
     url_dict[key] = url
   return url_dict
 
+def getEffectiveDomainFromURL(url):
+  try:
+    o = tldextract.extract(url.lower())
+    return o.domain + '.' + o.suffix
+  except Exception as e:
+    print >> sys.stderr, "error in getting getEffectiveDomain ", str(e)
+    return None
+
+def getEssentialPartOfURL(url):
+  try:
+    o = urlparse(url)
+    return o.scheme + "://" + o.netloc + o.path 
+  except Exception as e:
+    print >> sys.stderr, "error in getting getEssentialPartOfURL ", str(e)
+    return None
+
+def preProcessRegularURLLlist(main_url, url_list):
+  main_domain = getEffectiveDomain(main_url)
+  if main_domain == None or url_list == None:
+    return None
+  url_set = set()
+  for url in url_list:
+    domain = getEssentialPartOfURL(url)
+    if domain == None or domain != main_domain:
+      continue
+    u = getEssentialPartOfURL(url)
+    if u == None:
+      continue
+    url_set.add(u)    
+  return url_set
+
 def main():
   f = open(sys.argv[1])
   fw = open(sys.argv[2],'w')
@@ -48,10 +79,11 @@ def main():
     line = line.strip()
     url_list.append(line)
   print "Read %d lines of urls" %(len(url_list))
-  url_dict = preProcessGoogleURLList(url_list)
-  print "After processing, generating %d lines of urls" %(len(url_dict))
-  for k in url_dict:
-    fw.write(url_dict[k]+'\n')
+  #url_dict = preProcessGoogleURLList(url_list)
+  url_set = preProcessRegularURLLlist(url_list)
+  print "After processing, generating %d lines of urls" %(len(url_set))
+  for k in url_set:
+    fw.write(url_set[k]+'\n')
   fw.close()
   f.close()
 

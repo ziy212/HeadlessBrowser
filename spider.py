@@ -20,4 +20,3 @@ class MySpider(Spider):
             print url
             yield Request(url, callback=self.parse)
 
-spider = MySpider()
