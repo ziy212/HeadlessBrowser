@@ -1,7 +1,7 @@
 from urlparse import urlparse
 from urllib import unquote_plus
 import sys
-import HTMLParser
+import HTMLParser, tldextract
 html_parser = HTMLParser.HTMLParser()
 
 def decodeURL(url):
@@ -57,7 +57,7 @@ def getEssentialPartOfURL(url):
     return None
 
 def preProcessRegularURLLlist(main_url, url_list):
-  main_domain = getEffectiveDomain(main_url)
+  main_domain = getEffectiveDomainFromURL(main_url)
   if main_domain == None or url_list == None:
     return None
   url_set = set()
@@ -80,7 +80,7 @@ def main():
     url_list.append(line)
   print "Read %d lines of urls" %(len(url_list))
   #url_dict = preProcessGoogleURLList(url_list)
-  url_set = preProcessRegularURLLlist(url_list)
+  url_set = preProcessRegularURLLlist(url_list[0], url_list)
   print "After processing, generating %d lines of urls" %(len(url_set))
   for k in url_set:
     fw.write(url_set[k]+'\n')
