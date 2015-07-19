@@ -84,7 +84,7 @@ def main():
   url_set = preProcessRegularURLLlist(url_list[0], url_list)
   print "After processing, generating %d lines of urls" %(len(url_set))
   for k in url_set:
-    fw.write(url_set[k]+'\n')
+    fw.write(k+'\n')
   fw.close()
   f.close()
 
