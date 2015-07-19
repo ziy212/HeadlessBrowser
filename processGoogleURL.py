@@ -62,7 +62,7 @@ def preProcessRegularURLLlist(main_url, url_list):
     return None
   url_set = set()
   for url in url_list:
-    domain = getEssentialPartOfURL(url)
+    domain = getEffectiveDomainFromURL(url)
     print "domain %s of %s " %(domain, url)
     if domain == None or domain != main_domain:
       continue
