@@ -362,7 +362,7 @@ def analyzeJSCodes(script, display=False):
     #print "first_level_seq: %d" %len(visitor.first_level_seq)
     return visitor.node_order_list
   except Exception as e:
-    print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
+    print >>sys.stderr, "error parsing script: "+str(e)+" || "+script
     return None
 
 def analyzeJSCodesFinerBlock(script, display=False):
@@ -379,7 +379,7 @@ def analyzeJSCodesFinerBlock(script, display=False):
       return None, None
     return visitor.first_level_seq, visitor.scripts
   except Exception as e:
-    print >>sys.stderr, "error parsing script: "+str(e)+" "+script[:100]
+    print >>sys.stderr, "error parsing script: "+str(e)+" || "+script
     return None, None
 
 def analyzeJSON(script):
