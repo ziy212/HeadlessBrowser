@@ -370,7 +370,7 @@ def analyzeJSCodesFinerBlock(script, display=False):
     parser = Parser()
     script = script.strip()
     if script.startswith('<!--') and script.endswith('-->'):
-      print >>sys.stderr, "debug: modify commented scripts [START]"+script+" [END]"
+      #print >>sys.stderr, "debug: modify commented scripts [START]"+script+" [END]"
       script = script[4: -3]
     tree = parser.parse(script)
     #print tree.children()
@@ -383,7 +383,7 @@ def analyzeJSCodesFinerBlock(script, display=False):
       return None, None
     return visitor.first_level_seq, visitor.scripts
   except Exception as e:
-    print >>sys.stderr, "error parsing script: "+str(e)+" || "+script
+    print >>sys.stderr, "error parsing script: "+str(e)+" || [START]"+script[:100]+"[END]"
     return None, None
 
 def analyzeJSON(script):
