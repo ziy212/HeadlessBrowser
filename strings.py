@@ -10,6 +10,7 @@ class StringType(Enum):
   CONST = "CONST"
   ENUM = "ENUM"
   NUMBER = "NUMBER"
+  QUOTED_NUMBER = "QUOTED_NUMBER"
   URI = "URI"
   OTHER = "OTHER"
 
@@ -59,8 +60,8 @@ class Pattern():
 			self.max_len = obj['max_len']
 			self.prefix = obj['prefix']
 			self.alphanumeric = obj['alphanumeric']
-			self.special_char_set = obj['special_char_set']
-			self.domain_set = obj['domain_set']
+			self.special_char_set = set(obj['special_char_set'])
+			self.domain_set = set(obj['domain_set'])
 		except Exception as e:
 			print >> sys.stderr, "error in loading contents to pattern ", str(e)
 			return False
@@ -73,8 +74,8 @@ class Pattern():
 			obj['max_len'] = self.max_len
 			obj['prefix'] = self.prefix
 			obj['alphanumeric'] = self.alphanumeric
-			obj['special_char_set'] = self.special_char_set
-			obj['domain_set'] = self.domain_set
+			obj['special_char_set'] = [x for x in self.special_char_set]
+			obj['domain_set'] = [x for x in self.domain_set]
 			return json.dumps(obj)
 		except Exception as e:
 			print >> sys.stderr, "error in dumping contents ", str(e)
@@ -138,7 +139,7 @@ def getSpecialCharacters(string):
 #return (type, value)
 def analyzeStringListType(sample_list):
 	if len(sample_list) < MIN_SAMPLE_SIZE:
-		print >>sys.stderr, "error: sample size too small"
+		print >>sys.stderr, "error: sample size too small: %d " %len(sample_list)
 		return None, None
 
 	# Test CONST
@@ -175,7 +176,8 @@ def analyzeStringListType(sample_list):
  			cur_domains = getDomainsFromString(item)
  			domain_set = domain_set.union(cur_domains)
 	 	except Exception as e:
-	 		print str(e)
+	 		pass
+	 		#print str(e)
 	if url_count == len(unquoted_sample_list):
 		return StringType.URI, domain_set
 
@@ -186,6 +188,16 @@ def analyzeStringListType(sample_list):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
 		return StringType.NUMBER, None
+
+	# Test QUOTED_NUMBER
+	numeric_count = 0
+	for item in sample_list:
+		if stringIsNumeric(item[1:-1]) and \
+			item[0] == item[-1] and \
+			(item[0] == '"' or item[0] == "'"):
+			numeric_count += 1
+	if numeric_count == len(sample_list):
+		return StringType.QUOTED_NUMBER, None
 
 	# fixed_len, min_len, max_len
 	patt = Pattern(domain_set=domain_set)
@@ -201,7 +213,7 @@ def analyzeStringListType(sample_list):
 	# prefix
 	sorted_list = sorted(sample_list)
 	for i in range(min_len):
-		if sorted_list[0][i] != sorted_list[-1][0]:
+		if sorted_list[0][i] != sorted_list[-1][i]:
 			break
 	if i >= PATTERN_MIN_PREFIX:
 		patt.prefix = sorted_list[0][:i]
