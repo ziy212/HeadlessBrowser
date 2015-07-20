@@ -1,8 +1,8 @@
-import sys, re, tldextract, json
+import sys, re, tldextract, json, urllib
 from enum import Enum
 from urlparse import urlparse
 
-MIN_SAMPLE_SIZE = 10
+MIN_SAMPLE_SIZE = 3
 ENUM_THRESHOLD = 0.3
 PATTERN_MIN_PREFIX = 3
 
@@ -137,31 +137,31 @@ def getSpecialCharacters(string):
 
 #return (type, value)
 def analyzeStringListType(sample_list):
-  if len(sample_list) < MIN_SAMPLE_SIZE:
-  	print >>sys.stderr, "error: sample size too small"
-  	return None, None
+	if len(sample_list) < MIN_SAMPLE_SIZE:
+		print >>sys.stderr, "error: sample size too small"
+		return None, None
 
-  # Test CONST
-  sample_dict = {}
-  for item in sample_list:
-  	item = item.lower().strip()
-  	if not item in sample_dict:
-  		sample_dict[item] = 1
-  	else:
-  		sample_dict[item] += 1
+	# Test CONST
+	sample_dict = {}
+	for item in sample_list:
+		item = item.lower().strip()
+		if not item in sample_dict:
+			sample_dict[item] = 1
+		else:
+			sample_dict[item] += 1
 
-  if len(sample_dict) == 1:
-  	return StringType.CONST, None
+	if len(sample_dict) == 1:
+		return StringType.CONST, None
 
   # Test ENUM
-  percent = sorted(\
+	percent = sorted(\
   	[float(sample_dict[k])/float(len(sample_list)) \
   		for k in sample_dict])
- 	if percent[0] > ENUM_THRESHOLD:
- 		return StringType.ENUM, sample_dict
+	if percent[0] > ENUM_THRESHOLD:
+		return StringType.ENUM, sample_dict
 
- 	# Test URI
- 	unquoted_sample_list = [urllib.unquote_plus(x) for x in sample_list]
+	# Test URI
+	unquoted_sample_list = [urllib.unquote_plus(x) for x in sample_list]
  	domain_set = set()
  	url_count = 0
  	pattern = "http(s?)\:\/\/"
@@ -210,7 +210,7 @@ def analyzeStringListType(sample_list):
 	special_char_set = set()
 	for item in sample_list:
 		s = getSpecialCharacters(item)
-		special_char_set = getSpecialCharacters.union(s)
+		special_char_set = special_char_set.union(s)
 	if len(special_char_set) > 0:
 		patt.special_char_set = special_char_set
 

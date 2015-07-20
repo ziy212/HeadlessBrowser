@@ -80,8 +80,8 @@ def main():
     line = line.strip()
     url_list.append(line)
   print "Read %d lines of urls" %(len(url_list))
-  #url_dict = preProcessGoogleURLList(url_list)
-  url_set = preProcessRegularURLLlist(url_list[0], url_list)
+  url_dict = preProcessGoogleURLList(url_list)
+  #url_set = preProcessRegularURLLlist(url_list[0], url_list)
   print "After processing, generating %d lines of urls" %(len(url_set))
   for k in url_set:
     fw.write(k+'\n')
