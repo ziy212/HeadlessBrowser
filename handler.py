@@ -9,10 +9,11 @@ from ASTAnalyzer import analyzeJSCodes
 from ASTAnalyzer import analyzeJSCodesFinerBlock
 from ASTAnalyzer import analyzeJSON
 from ASTAnalyzer import ASTOutputNode
+from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
-import sys, os, re, json
-import hashlib
+import sys, os, re, json, hashlib
+import strings
 
 
 def extractAndStoreScriptsFromFileList(file_list_path):
@@ -98,9 +99,13 @@ def fetchAndDisplayScriptsFromDB(url):
 class TemplateTree():
   def __init__(self, nodes, key):
     self.nodes = nodes
-    if (nodes == None) or (len(nodes)==0):
-      print >> sys.stderr, "TemplateTree nodes is null or length is zero"
-      return None
+    if nodes == None:
+      print >> sys.stderr, "This is a null TemplateTree"
+      return
+
+    if len(nodes) == 0:
+      print >> sys.stderr, "TemplateTree nodes' length is zero"
+      return
 
     if isinstance(nodes, dict):
       self.type = "json"
@@ -109,7 +114,7 @@ class TemplateTree():
     else:
       print >> sys.stderr, "TemplateTree nodes format error: %s" \
             %(nodes[0].__class__)
-      return None
+      return
 
     if key == None:
       if nodes != None:
@@ -124,15 +129,22 @@ class TemplateTree():
         else:
           print "TemplateTree nodes format error: %s %d %d" \
             %(nodes[0].__class__, id(type(nodes[0])), id(ASTOutputNode))
-          return None
-          
+          return
         key = m.hexdigest()
+
     self.key = key
       
     self.strings = {}
+    #value = {index : (StringType, data) }
+    self.string_types = {}
+
     self.objects = {}
+    #value = {index : {key : (StringType, data) }}
+    self.object_types = {}
+    
     self.arrays = {}
-    self.identifiers = {}
+    #value = {index : {key : (StringType, data) }}
+    self.array_types = {}
 
   def get_length(self):
     return len(self.nodes)
@@ -140,6 +152,45 @@ class TemplateTree():
   def get_data(self):
     pass
 
+  '''
+    { type : [json|js],
+      tree : ['encoded_node1,encoded_node2...'|'{}'],
+      string_types : '{index : val },
+      object_types : '{index : {k:type_val} }',
+      array_types  : '{index : {k:type_val} }' }
+  '''
+  def dumps(self):
+    try:
+      obj = {'type' : self.type}
+      if self.type == 'json':
+        obj['tree'] = self.nodes
+      else:
+        obj['tree'] = ','.join([b64encode(x.tag) for x in self.nodes])
+      obj['string_types'] = self.string_types
+      obj['object_types'] = self.object_types
+      obj['array_types'] = self.array_types
+      return json.dumps(obj)
+    except Exception as e:
+      displayErrorMsg("TemplateTree.dumps", str(e))
+      return None
+
+  def loads(self, obj_str):
+    try:
+      obj = json.loads(obj_str)
+      self.type = obj['type']
+      if self.type == 'json':
+        self.nodes = obj['tree']
+      elif self.type == 'js':
+        nodes = obj['tree'].split(',')
+        self.nodes = [ASTOutputNode(b64decode(x)) for x in nodes]
+      self.string_types = obj['string_types']
+      self.object_types = obj['object_types']
+      self.array_types = obj['array_types']
+      return True
+    except Exception as e:
+      displayErrorMsg("TemplateTree.loads", str(e))
+      return False
+    
 
 def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   f = open(path)
@@ -190,6 +241,8 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
               total_uniq_script_blocks += 1
  
+  #start to analyze trees
+  #scriptdict[tree_key] = [(script, url, tree, index)]
   trees = []
   keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
   for key in keys:
@@ -199,95 +252,100 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
       fw.write(item[1]+"||"+str(item[3])+"  "+str(item[0])+"\n")
     
     #make sure all inlines in a template have same sequential size
-    cur_len = 0
-    seq_length = 0
-    consistent = True
     script_list = scriptdict[key]
-    for i in range(len(script_list)):
-      cur_len = len(script_list[i][2].nodes)
-      if seq_length == 0:
-        seq_length = cur_len
-        continue
-      if cur_len != seq_length:
-        print "WARNING not equal size sequential for %s" % name
-        consistent = False
-        break
-    if not consistent:
-      fw.write("Alert!!! not consistent")
+    length_list = sorted([len(item[2].nodes) for item in script_list])
+    seq_length = 0
+    if length_list[0] != length_list[-1]:
+      fw.write("[ALERT] seq length is not consistent")
       fw.close()
       continue
-    if seq_length == 0:
-      fw.write("Alert!!! seq length is zero")
-      fw.close()
-      continue
+    else:
+      seq_length = length_list[0]
 
-    #if not isinstance(script_list[0][2][0], ASTOutputNode):
+    #only handle JavaScript for now
     tree = script_list[0][2]
     if tree.type == "json":
-      print "the inline is not script!"
-      fw.write("the inline is not script\n")
+      print "the inline is json!"
+      fw.write("[TODO]: the inline is json. This is next step\n")
       fw.close()
       trees.append(tree)
       continue  
+    
+    #process String/Object/Array nodes
+    #script_list: [(script, url, tree, index)]
     fw.write("start analyzeing values\n")    
-    #iterate tree list and write string/array/object values
     script_length = len(script_list)
     for i in range(seq_length):
       node = script_list[0][2].nodes[i]
-      try:
-        if node.tag == "String":
-          val = []
-          for j in range(script_length):
-            t = script_list[j][2]
-            val.append(t.nodes[i].value)
-          encoded_val = [b64encode(x) for x in val]
-          #item = 'string%d: %s' %(i, '||'.join(val))
-          item = 'string%d: %s' %(i, ','.join(encoded_val))
-          fw.write(item+"\n")
-          tree.strings[i] = val
-        if node.tag == "Object":
-          rs = analyzeObjectResultHelper(script_list, i)
-          for k in rs:
-            encoded_val = [b64encode(x) for x in rs[k]]
-            fw.write("object%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
-          tree.objects[i] = rs
-        if node.tag == "Array":
-          rs = analyzeArrayResultHelper(script_list, i)
-          for k in rs:
-            encoded_val = [b64encode(x) for x in rs[k]]
-            fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
-          tree.arrays[i] = rs
-      except Exception as e:
-        print "excpetion in analyzing values %d %s " %(i, str(e)) 
+      #try:
+      if node.tag == "String":
+        vals = [item[2].nodes[i].value for item in script_list]
+        encoded_val = [b64encode(x) for x in vals]
+        #item = 'string%d: %s' %(i, ','.join(encoded_val))
+        #fw.write(item+"\n")
+        tree.strings[i] = vals
+        tp, data = strings.analyzeStringListType(vals)
+        tree.string_types[i] = strings.dumpStringTypeAndData(tp, data)
+        #debug_json = strings.loadStringTypeAndData(tree.string_types[i])
+        #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])
+        print "STRING%d: [TYPE:%s] [VALUE:%s]" \
+          %(i, tree.string_types[i],','.join(encoded_val))
+      if node.tag == "Object":
+        rs = analyzeObjectResultHelper(script_list, i)
+        rs = extractObjectValues(rs)
+        type_dict = {}
+        for k in rs:
+          encoded_val = [b64encode(x) for x in rs[k]]
+          #fw.write("object%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
+          tp, data = strings.analyzeStringListType(rs[k])
+          type_dict[k] = strings.dumpStringTypeAndData(tp, data)
+          #debug_json = strings.loadStringTypeAndData(type_dict[k])
+          #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])
+          print "OBJECT%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
+            %(i, type_dict[k], k, ','.join(encoded_val))
+        tree.objects[i] = rs
+        tree.object_types[i] = type_dict
+      if node.tag == "Array":
+        rs = analyzeArrayResultHelper(script_list, i)
+        rs = extractObjectValues(rs)
+        type_dict = {}
+        for k in rs:
+          encoded_val = [b64encode(x) for x in rs[k]]
+          #fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
+          tp, data = strings.analyzeStringListType(rs[k])
+          type_dict[k] = strings.dumpStringTypeAndData(tp, data)
+          debug_json = strings.loadStringTypeAndData(type_dict[k])
+          #print debug_json['val'].__class__.__name__
+          #print "[DEBUG] type:%s val:%s" %(str(debug_json['type']),str(debug_json['val']) )
+          print "ARRAY%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
+            %(i, type_dict[k], k, ','.join(encoded_val))
+        tree.arrays[i] = rs
+        tree.array_types[i] = type_dict
+      #except Exception as e:
+      #  print "excpetion in analyzing node %d %s " %(i, str(e)) 
     
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
-    #tree = scriptdict[key][0][2]
     trees.append(tree)
     
     fw.close()
 
+  #store trees
   trees = sorted(trees, key=lambda x:x.get_length())
-
-  #write trees
   fw = open(os.path.join(dst_path,"trees"), 'w')
   fw_json = open(os.path.join(dst_path,"jsons"), 'w')
   for i in range(len(trees)):
+    tree_val = trees[i].dumps()
+    fw.write( "1 %.3d: %s\n" %(i, tree_val))
+    new_tree = TemplateTree(None, None)
+    new_tree.loads(tree_val)
     if trees[i].type == "js":
-      fw.write( "%.3d: %s\n" %(i, getTreeSeq(trees[i].nodes)))
+      fw.write( "2 %.3d: %s\n" %(i, getTreeSeq(new_tree.nodes)))
     elif trees[i].type == 'json':
-      fw.write("%.3d: %s\n" % (i, json.dumps(trees[i].nodes)))
+      fw.write("2 %.3d: %s\n" % (i, json.dumps(new_tree.nodes)))
   fw.close()
   fw_json.close()
   print "generate %d trees for %d scripts uniqe[%d]" \
     %(len(trees), total_script_blocks, total_uniq_script_blocks)
-  
-  #count = 0
-  #for i in range(len(trees)):
-  #  for j in range(i+1, len(trees)):
-  #    if isSubTree(trees[i], trees[j]):
-  #      print "tree %d is a subtree of %d " %(i, j)
-  #      count  += 1
-  #print "%d subtrees " %count
 
 def getTrees(path):
   f = open(path)
@@ -359,6 +417,60 @@ def getTreeSeq(nodes):
     string += '%s[%d] ' % (item.tag, item.child_num)
   return string
 
+#key : [val1, val2]
+def mergeTwoArrayDict(left, right):
+  for k in right:
+    if k in left:
+      left[k] = left[k] + right[k]
+    else:
+      left[k] = right[k]
+
+#guarantees no array in results
+def extractArrayValues(data):
+  rs = []
+  for item in data:
+    if isinstance(item, basestring) or isinstance(item, int) or isinstance(item, float):
+      rs.append(item)
+    elif isinstance(item, list) or isinstance(item, tuple):
+      val = extractArrayValues(item)
+      rs += val
+    elif isinstance(item, dict):
+      rs.append(extractObjectValues(item))
+    else:
+      displayErrorMsg('extractArrayValues', "unknown type "+str(type(item)))
+  return rs
+
+#{key : [string or number]}
+def extractObjectValues(data):
+  rs = {} #key : [val1, val2]
+  for k in data:
+    if not k in rs:
+      rs[k] = []
+    val = data[k]
+    if isinstance(val, dict):
+      sub_rs = extractObjectValues(val)
+      mergeTwoArrayDict(rs, sub_rs)
+    elif isinstance(val, list) or isinstance(val, tuple):
+      arr = extractArrayValues(val)
+      for item in arr:
+        if isinstance(item, dict):
+          mergeTwoArrayDict(rs, item)
+        elif isinstance(item, basestring) or isinstance(item, int) or isinstance(item, float):
+          rs[k].append(item)
+        else:
+          displayErrorMsg('extractObjectValues',\
+            "shouldn't have other types"+str(type(item)))
+    elif isinstance(val, basestring) or isinstance(val, int) or isinstance(val, float):
+      rs[k].append(val)
+    else:
+      displayErrorMsg('extractObjectValues',\
+            "unknown type:"+str(type(val)))
+      continue
+  invalid_keys = [k for k in rs if len(rs[k]) == 0]
+  for k in invalid_keys:
+    del rs[k]
+  return rs
+
 #script_list: [(script, url, tree)]
 #return {key: [val]}
 def analyzeObjectResultHelper(script_list, index):
@@ -369,8 +481,9 @@ def analyzeObjectResultHelper(script_list, index):
       tree = script_list[i][2]
       obj = tree.nodes[index].value
       for k in obj:
+        val = obj[k]
         if not k in rs:
-          rs[k] = [obj[k]]
+          rs[k] = []
         else:
           rs[k].append(obj[k])
     except Exception as e:

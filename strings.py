@@ -4,16 +4,9 @@ from urlparse import urlparse
 from base64 import b64encode
 from base64 import b64decode
 
-MIN_SAMPLE_SIZE = 3
+MIN_SAMPLE_SIZE = 1
 ENUM_THRESHOLD = 0.3
 PATTERN_MIN_PREFIX = 3
-StringTypeDict = {\
-	'CONST' : StringType.CONST, \
-	'ENUM' : StringType.ENUM, \
-	'NUMBER' : StringType.NUMBER, \
-	'QUOTED_NUMBER' : StringType.QUOTED_NUMBER, \
-	'URI' : StringType.URI, \
-	'OTHER' : StringType.OTHER}
 
 class StringType(Enum):
   CONST = "CONST"
@@ -22,6 +15,14 @@ class StringType(Enum):
   QUOTED_NUMBER = "QUOTED_NUMBER"
   URI = "URI"
   OTHER = "OTHER"
+
+StringTypeDict = {\
+  'CONST' : StringType.CONST, \
+  'ENUM' : StringType.ENUM, \
+  'NUMBER' : StringType.NUMBER, \
+  'QUOTED_NUMBER' : StringType.QUOTED_NUMBER, \
+  'URI' : StringType.URI, \
+  'OTHER' : StringType.OTHER}
 
 class Pattern():
 	def __init__(self, fixed_len=-1,\
@@ -90,6 +91,9 @@ class Pattern():
 			print >> sys.stderr, "error in dumping contents ", str(e)
 			return json.dumps({})
 
+	def __str__(self):
+		return self.dumps()
+
 def getEffectiveDomainFromURL(url):
   try:
     o = tldextract.extract(url.lower())
@@ -153,37 +157,39 @@ def loadStringTypeAndData(data):
 		return None
 
 	if obj == None or obj['type'] == "ERROR":
+		print 'loadStringTypeAndData none: %s' %str(obj)
 		return None
 
 	try:
 		tp = StringTypeDict[obj['type']]
 		obj['type'] = tp
-		if tp == strings.StringType.CONST:
+		if tp == StringType.CONST:
 			obj['val'] = b64decode(obj['val'])
-		elif tp == strings.StringType.ENUM: 
+		elif tp == StringType.ENUM: 
 			elems = obj['val'].split(',')
 			decoded_vals = [b64decode(x) for x in elems]
 			obj['val'] = set(decoded_vals)
-		elif tp == strings.StringType.NUMBER:
+		elif tp == StringType.NUMBER:
 			obj['val'] = ""
-		elif tp == strings.StringType.QUOTED_NUMBER:
+		elif tp == StringType.QUOTED_NUMBER:
 			obj['val'] = ""
-		elif tp == strings.StringType.URI:
+		elif tp == StringType.URI:
 			elems = obj['val'].split(',')
 			decoded_vals = [b64decode(x) for x in elems]
 			obj['val'] = set(decoded_vals)
-		elif tp == strings.StringType.OTHER:
+		elif tp == StringType.OTHER:
 			val = b64decode(obj['val'])
+			val_obj = json.loads(val)
 			patt = Pattern()
-			patt.loads(val)
+			patt.loads(val_obj)
 			obj['val'] = patt
+		return obj
 	except Exception as e:
 		print >>sys.stderr, "error in loadStringTypeAndData 2 ",str(e),str(data)
 		return None
 
 def dumpStringTypeAndData(tp, data):
 	obj = {'type':'ERROR'}
-	
 	# CONST:
 	# data is the const value
 	# return {'type':'CONST', 'val':single_value}
@@ -203,26 +209,26 @@ def dumpStringTypeAndData(tp, data):
 	# OTHER:
 	# data is Pattern object
 	# return {'type':'OTHER', 'val':"decoded_pattern_string"}
-	if tp == strings.StringType.CONST:
+	if tp == StringType.CONST:
 		obj['type'] = "CONST"
-		obj['val'] = b64encode(data)
-	elif tp == strings.StringType.ENUM: 
+		obj['val'] = b64encode(str(data))
+	elif tp == StringType.ENUM: 
 		encoded_vals = [b64encode(x) for x in data]
 		val = ','.join(encoded_vals)
 		obj['type'] = "ENUM"
 		obj['val'] = val
-	elif tp == strings.StringType.NUMBER:
+	elif tp == StringType.NUMBER:
 		obj['type'] = "NUMBER"
-		obj['val'] = val
-	elif tp == strings.StringType.QUOTED_NUMBER:
+		obj['val'] = ''
+	elif tp == StringType.QUOTED_NUMBER:
 		obj['type'] = "QUOTED_NUMBER"
-		obj['val'] = val
-	elif tp == strings.StringType.URI:
+		obj['val'] = ''
+	elif tp == StringType.URI:
 		encoded_vals = [b64encode(x) for x in data]
 		val = ','.join(encoded_vals)
 		obj['type'] = "URI"
 		obj['val'] = val
-	elif tp == strings.StringType.OTHER:
+	elif tp == StringType.OTHER:
 		obj['type'] = "OTHER"
 		obj['val'] = b64encode(data.dumps())
 
@@ -244,14 +250,14 @@ def analyzeStringListType(sample_list):
 			sample_dict[item] += 1
 
 	if len(sample_dict) == 1:
-		return StringType.CONST, None
+		return StringType.CONST, sample_dict.values()[0]
 
   # Test ENUM
 	percent = sorted(\
   	[float(sample_dict[k])/float(len(sample_list)) \
   		for k in sample_dict])
 	if percent[0] > ENUM_THRESHOLD:
-		return StringType.ENUM, sample_dict
+		return StringType.ENUM, set(sample_dict.keys())
 
 	# Test URI
 	unquoted_sample_list = [urllib.unquote_plus(x) for x in sample_list]
@@ -279,7 +285,7 @@ def analyzeStringListType(sample_list):
 		if stringIsNumeric(item):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
-		return StringType.NUMBER, None
+		return StringType.NUMBER, ''
 
 	# Test QUOTED_NUMBER
 	numeric_count = 0
@@ -289,7 +295,7 @@ def analyzeStringListType(sample_list):
 			(item[0] == '"' or item[0] == "'"):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
-		return StringType.QUOTED_NUMBER, None
+		return StringType.QUOTED_NUMBER, ''
 
 	# fixed_len, min_len, max_len
 	patt = Pattern(domain_set=domain_set)
@@ -320,6 +326,6 @@ def analyzeStringListType(sample_list):
 
 	return StringType.OTHER, patt
 
-analyzeStringListType(['YES','YES','NO','NO','NO','YES','NO','NO','NO','YES','NO']) 
+#analyzeStringListType(['YES','YES','NO','NO','NO','YES','NO','NO','NO','YES','NO']) 
 
 
