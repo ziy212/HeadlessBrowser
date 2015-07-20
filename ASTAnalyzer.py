@@ -368,6 +368,10 @@ def analyzeJSCodes(script, display=False):
 def analyzeJSCodesFinerBlock(script, display=False):
   try:
     parser = Parser()
+    script = script.strip()
+    if script.startswith('<!--') and script.endswith('-->'):
+      print >>sys.stderr, "debug: modify commented scripts [START]"+script+" [END]"
+      script = script[4: -3]
     tree = parser.parse(script)
     #print tree.children()
     visitor = MyVisitor( display)
