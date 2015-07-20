@@ -14,6 +14,7 @@ from base64 import b64decode
 import sys, os, re, json
 import hashlib
 
+
 def extractAndStoreScriptsFromFileList(file_list_path):
   f = open(file_list_path)
   urls = set()

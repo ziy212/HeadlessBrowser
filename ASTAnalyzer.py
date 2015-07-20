@@ -369,6 +369,7 @@ def analyzeJSCodesFinerBlock(script, display=False):
   try:
     parser = Parser()
     script = script.strip()
+    #get rid of HTML comments
     if script.startswith('<!--') and script.endswith('-->'):
       #print >>sys.stderr, "debug: modify commented scripts [START]"+script+" [END]"
       script = script[4: -3]
@@ -376,8 +377,6 @@ def analyzeJSCodesFinerBlock(script, display=False):
     #print tree.children()
     visitor = MyVisitor( display)
     visitor.visit(tree, 0)
-    #subtrees = {}
-    #print "first_level_seq: %d" %len(visitor.first_level_seq)
     if len(visitor.first_level_seq) != len(visitor.scripts):
       print >>sys.stderr, "error parsing script: scripts and seqs length inconsistent "+script[:100]
       return None, None

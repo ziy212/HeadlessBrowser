@@ -1,10 +1,19 @@
 import sys, re, tldextract, json, urllib
 from enum import Enum
 from urlparse import urlparse
+from base64 import b64encode
+from base64 import b64decode
 
 MIN_SAMPLE_SIZE = 3
 ENUM_THRESHOLD = 0.3
 PATTERN_MIN_PREFIX = 3
+StringTypeDict = {\
+	'CONST' : StringType.CONST, \
+	'ENUM' : StringType.ENUM, \
+	'NUMBER' : StringType.NUMBER, \
+	'QUOTED_NUMBER' : StringType.QUOTED_NUMBER, \
+	'URI' : StringType.URI, \
+	'OTHER' : StringType.OTHER}
 
 class StringType(Enum):
   CONST = "CONST"
@@ -135,6 +144,89 @@ def getSpecialCharacters(string):
 		return set()
 	char_set = set(rs)
 	return char_set
+
+def loadStringTypeAndData(data):
+	try:
+		obj = json.loads(data)
+	except Exception as e:
+		print >>sys.stderr, "error in loadStringTypeAndData ",str(e),str(data)
+		return None
+
+	if obj == None or obj['type'] == "ERROR":
+		return None
+
+	try:
+		tp = StringTypeDict[obj['type']]
+		obj['type'] = tp
+		if tp == strings.StringType.CONST:
+			obj['val'] = b64decode(obj['val'])
+		elif tp == strings.StringType.ENUM: 
+			elems = obj['val'].split(',')
+			decoded_vals = [b64decode(x) for x in elems]
+			obj['val'] = set(decoded_vals)
+		elif tp == strings.StringType.NUMBER:
+			obj['val'] = ""
+		elif tp == strings.StringType.QUOTED_NUMBER:
+			obj['val'] = ""
+		elif tp == strings.StringType.URI:
+			elems = obj['val'].split(',')
+			decoded_vals = [b64decode(x) for x in elems]
+			obj['val'] = set(decoded_vals)
+		elif tp == strings.StringType.OTHER:
+			val = b64decode(obj['val'])
+			patt = Pattern()
+			patt.loads(val)
+			obj['val'] = patt
+	except Exception as e:
+		print >>sys.stderr, "error in loadStringTypeAndData 2 ",str(e),str(data)
+		return None
+
+def dumpStringTypeAndData(tp, data):
+	obj = {'type':'ERROR'}
+	
+	# CONST:
+	# data is the const value
+	# return {'type':'CONST', 'val':single_value}
+	
+	# ENUM:
+	# data is the `set` of enum value
+	# return {'type':'ENUM', 'val':"decoded_val1,decoded_val2"}
+	
+	# NUMBER/QUOTED_NUMBER:
+	# data is ""
+	# return {'type':'NUMBER', 'val':''} 
+	
+	# URI:
+	# data is the `set` of domain value
+	# return {'type':'URI', 'val':"decoded_domain1,decoded_domain2"}
+
+	# OTHER:
+	# data is Pattern object
+	# return {'type':'OTHER', 'val':"decoded_pattern_string"}
+	if tp == strings.StringType.CONST:
+		obj['type'] = "CONST"
+		obj['val'] = b64encode(data)
+	elif tp == strings.StringType.ENUM: 
+		encoded_vals = [b64encode(x) for x in data]
+		val = ','.join(encoded_vals)
+		obj['type'] = "ENUM"
+		obj['val'] = val
+	elif tp == strings.StringType.NUMBER:
+		obj['type'] = "NUMBER"
+		obj['val'] = val
+	elif tp == strings.StringType.QUOTED_NUMBER:
+		obj['type'] = "QUOTED_NUMBER"
+		obj['val'] = val
+	elif tp == strings.StringType.URI:
+		encoded_vals = [b64encode(x) for x in data]
+		val = ','.join(encoded_vals)
+		obj['type'] = "URI"
+		obj['val'] = val
+	elif tp == strings.StringType.OTHER:
+		obj['type'] = "OTHER"
+		obj['val'] = b64encode(data.dumps())
+
+	return json.dumps(obj)
 
 #return (type, value)
 def analyzeStringListType(sample_list):
