@@ -203,9 +203,9 @@ def matchTreesFromDomainWithScript(domain, script):
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  #matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #getTrees(sys.argv[1])
-  rs = matchTreesFromDomainWithScript(sys.argv[1], open(sys.argv[2]).read())
+  #rs = matchTreesFromDomainWithScript(sys.argv[1], open(sys.argv[2]).read())
   for item in rs:
     print '[S] %s' % (item)
 

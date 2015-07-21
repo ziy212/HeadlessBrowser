@@ -47,6 +47,15 @@ class NodePattern():
 			if val_str not in self.val:
 				print "[COMPARE] ENUM error %s not in %s " %(str(val_str), str(self.val))
 				return False
+		elif self.tp == StringType.Number:
+			if not stringIsNumeric(val_str):
+				print "[COMPARE] NUMBER error %s not a number " %(val_str)
+				return False
+		elif self.tp == StringType.QUOTED_NUMBER:
+			if not stringIsNumeric(val_str[1:-1]):
+				print "[COMPARE] QUOTED_NUMBER error %s not a quoted number " %(val_str)
+				return False
+		elif self.tp == StringType.URI:
 
 	def loads(self, data_str):
 		try:
