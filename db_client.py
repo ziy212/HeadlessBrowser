@@ -6,6 +6,7 @@ import base64
 import os
 import urlparse
 from html_parser import calcTwoHTMLDistance
+from strings import getEffectiveDomainFromURL
 import logging
 import math
 import traceback
@@ -113,6 +114,35 @@ def storeScripts(url, host_list, inline_list):
         print >> sys.stderr, "Exception in storeScripts: "+str(e)
         return False
 
+def storeTree(url, key, tree):
+    try:
+        host = "http://localhost:4040/api/web-contents/trees-store"
+        req = urllib2.Request(host)
+        req.add_header('Content-Type', 'application/json')
+        domain = getEffectiveDomainFromURL(url)
+        if domain == None:
+            print "[storeTree] failed to get domain from url:", url
+            return False
+        url = urllib.quote_plus(url)
+        data = { 'url' : url.strip(), 
+            'key' : key,
+            'tree' : tree,
+            'domain' : domain }
+
+        response = urllib2.urlopen(req, json.dumps(data))
+        rs = json.loads(response.read())
+        
+        if rs['success']:
+            print "successfully store tree %s for url %s " % (key, url)
+            return True
+        else:
+            print "failed to store tree %s for url %s " % (key, url)
+            return False
+
+    except Exception as e:
+        print >> sys.stderr, "Exception in storeTree: "+str(e)
+        return False
+
 def fetchScripts(url):
     try:
         host = "http://localhost:4040/api/web-contents/scripts-fetch"
@@ -186,6 +216,37 @@ def fetchDistance(url1, url2):
     except Exception as e:
         #raise e
         print str(e)
+        return None
+
+def fetchTrees(domain):
+    try:
+        host = "http://localhost:4040/api/web-contents/trees-fetch"
+        req = urllib2.Request(host)
+        req.add_header('Content-Type', 'application/json')
+        domain = domain.strip().lower()
+        data = { 'domain' : domain }
+
+        response = urllib2.urlopen(req, json.dumps(data))
+        rs = json.loads(response.read())
+        
+        final_rs = {}
+        if rs['success']:
+            db_result = json.loads(rs['result'])
+            if db_result == None or len(db_result) == 0:
+                print "no trees for domain %s" %(domain)
+                return None
+            print "get %d trees for domain %s" % (len(db_result), domain)
+            for item in db_result:
+                final_rs[item['key'] ] = item['tree']
+
+            return final_rs
+        else:
+            print "failed to fetch tree of domain: "+domain
+            return None
+
+    except Exception as e:
+        #raise e
+        print "fetching tree exception: ",str(e)
         return None
 
 def findAverageContents(arr):

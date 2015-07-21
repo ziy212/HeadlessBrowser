@@ -70,26 +70,42 @@ class Pattern():
 			self.max_len = obj['max_len']
 			self.prefix = obj['prefix']
 			self.alphanumeric = obj['alphanumeric']
-			self.special_char_set = set(obj['special_char_set'])
-			self.domain_set = set(obj['domain_set'])
+			if obj['special_char_set'] != None:
+				self.special_char_set = set([b64decode(x) for x in obj['special_char_set']] )
+			else:
+				self.special_char_set = None
+			if obj['domain_set'] != None:
+				self.domain_set = set(obj['domain_set'])
+			else:
+				self.domain_set = None
 		except Exception as e:
 			print >> sys.stderr, "error in loading contents to pattern ", str(e)
 			return False
 
+	def debug(self):
+		debug_str = "fixed_len:%d min_len:%d max_len:%d prefix:%s aln:%s char_set:%s d_set:%s" \
+			%(self.fixed_len, self.min_len, self.max_len, \
+				str(self.prefix), str(self.alphanumeric), str(self.special_char_set),str(self.domain_set) )
+		return debug_str
+
 	def dumps(self):
 		try:
-			obj = {}
+			obj = {'fixed_len' : -1, 'min_len' : -1, 'max_len' : -1, \
+				'prefix' : None, 'alphanumeric': None, 'special_char_set': None, \
+				'domain_set' : None}
 			obj['fixed_len'] = self.fixed_len
 			obj['min_len'] = self.min_len
 			obj['max_len'] = self.max_len
 			obj['prefix'] = self.prefix
 			obj['alphanumeric'] = self.alphanumeric
-			obj['special_char_set'] = [x for x in self.special_char_set]
+			obj['special_char_set'] = [b64encode(x) for x in self.special_char_set]
 			obj['domain_set'] = [x for x in self.domain_set]
 			return json.dumps(obj)
 		except Exception as e:
-			print >> sys.stderr, "error in dumping contents ", str(e)
-			return json.dumps({})
+			print >> sys.stderr, "error in dumping contents ", str(e), self.debug()
+			return json.dumps({'fixed_len' : -1, 'min_len' : -1, 'max_len' : -1, \
+				'prefix' : None, 'alphanumeric': None, 'special_char_set': None, \
+				'domain_set' : None})
 
 	def __str__(self):
 		return self.dumps()
@@ -179,6 +195,7 @@ def loadStringTypeAndData(data):
 			obj['val'] = set(decoded_vals)
 		elif tp == StringType.OTHER:
 			val = b64decode(obj['val'])
+			#print >>sys.stderr, "[DEBUG], OTHER VAL ",val
 			val_obj = json.loads(val)
 			patt = Pattern()
 			patt.loads(val_obj)

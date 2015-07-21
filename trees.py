@@ -1,5 +1,6 @@
 from handler import TemplateTree
 from handler import getTrees
+from handler import getTreesForDomainFromDB
 from handler import isSubTree
 from handler import fetchScriptsFromDB
 from ASTAnalyzer import analyzeJSCodes
@@ -140,13 +141,39 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
       nonmatch_tree += 1
       print "non match script: %s " %(scriptdict[key][0][0])
 
-
   print "matched scripts:%d[%d] \n nonmatched scripts:%d[%d] nonmatch_tree:%d" \
     %(match_uniq_script,match_script, nonmatch_uniq_script, nonmatch_script, nonmatch_tree)
 
+def matchTreesFromDomainWithScriptsFromURLList(domain, url_list_path):
+  trees = getTreesForDomainFromDB(domain)
+  if trees == None or len(trees) == 0:
+    print "failed to fetch trees for domain ", domain
+    return
+  print "fetched %d trees for domain" %(len(trees))
+  scriptdict, count_dict, json_count = extractScriptsAndGenerateASTNodesFromURLListFinerBlock(url_list_path)
+  match_script = 0
+  match_uniq_script = 0
+  nonmatch_script = 0
+  nonmatch_uniq_script = 0
+  nonmatch_tree = 0
+  nomatch_list = []
+  for key in scriptdict:
+    if key in treedict:
+      match_uniq_script += len(scriptdict[key])
+      match_script += count_dict[key]
+    else:
+      nonmatch_uniq_script += len(scriptdict[key])
+      nonmatch_script += count_dict[key]
+      nonmatch_tree += 1
+      print "non match script: %s " %(scriptdict[key][0][0])
+  print "matched scripts:%d[%d] \n nonmatched scripts:%d[%d] nonmatch_tree:%d" \
+    %(match_uniq_script,match_script, nonmatch_uniq_script, nonmatch_script, nonmatch_tree)
+
+
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #getTrees(sys.argv[1])
 
 

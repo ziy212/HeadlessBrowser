@@ -182,6 +182,42 @@ app.post('/api/web-contents/contents-store', function (req, res) {
   }
 });
 
+/* Store Trees */
+app.post('/api/web-contents/trees-store', function (req, res) {
+	if ( !req.body.url || !req.body.key || !req.body.tree || !req.body.domain) {
+		console.log(req.body.url+" "+req.body.key+" "+req.body.tree);
+		return res.json({success : false});
+	}
+  var url = standardizeURL(req.body.url);
+  try{
+	  var collection = db.get('trees');
+	  collection.insert( 
+	  	{ url : url, key : req.body.key, tree : req.body.tree , domain: req.body.domain},
+	  function (err, doc) {
+	    if (err) {
+	        console.log("[FAIL] failed to insert tree into DB: "
+	        	+err+" "+url+" "+req.body.key);
+	        res.json({
+  					success : false,
+  					message : err});
+	    }
+	    else {
+	        console.log("[SUCC] inserted tree into DB: "+
+	        	url+" "+req.body.key);
+	        res.json({
+  					success : true,
+  					url : url,
+  					key : req.body.key});
+	    }});
+	}
+	catch (e) {
+		console.log("error: "+e);
+		res.json({
+  		success : false,
+  		message : e});
+	}
+});
+
 /* Fetch distance */
 app.post('/api/web-contents/distance-fetch', function (req, res){
 	var url, data, index, collection;
@@ -277,6 +313,48 @@ app.post('/api/web-contents/contents-fetch', function (req, res){
   }
   catch (e) {
   	console.log("[FAIL] failed to process req "+e);
+  	res.json({ success : false });
+  }	
+});
+
+/* Fetch Contents */
+app.post('/api/web-contents/trees-fetch', function (req, res){
+	var url, data, index, collection;
+	if ( !req.body.domain ) {
+		res.json({success : false});
+		return
+	}
+	try{
+		console.log("domain:"+req.body.domain)
+		if (req.body.domain === "*") {
+			data = {};
+		}
+		else {
+  		domain = req.body.domain.trim().toLowerCase();
+  		data = {domain : domain};
+		}
+  	console.log("  [DEBUG] fetch trees of domain: "+domain);
+	  collection = db.get('trees');
+	  collection.find(data, function (err, docs) {
+	    if (err) {
+	        console.log("[FAIL] failed to fetch trees from "+url);
+	        res.json({
+  					success : false
+  				});
+	    }
+	    else {
+	        console.log("[SUCC] " + docs.length +' items');
+	        for (index in docs) {
+	        	docs[index].url = querystring.escape(docs[index].url);
+	        }
+	        res.json({
+  					success : true,
+  					result : JSON.stringify(docs)
+  				});
+	    }} );
+  }
+  catch (e) {
+  	console.log("[FAIL] failed to process fetching tree "+e);
   	res.json({ success : false });
   }	
 });

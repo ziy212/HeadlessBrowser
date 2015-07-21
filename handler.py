@@ -2,6 +2,8 @@ from html_parser import calcTwoHTMLDistanceFromFiles
 from html_parser import extractScriptFromContents
 from html_parser import compare_two_string
 from db_client import storeScripts
+from db_client import storeTree
+from db_client import fetchTrees
 from db_client import fetchScripts
 from db_client import fetchURLContents
 from db_client import findAverageContents
@@ -99,6 +101,21 @@ def fetchAndDisplayScriptsFromDB(url):
 class TemplateTree():
   def __init__(self, nodes, key):
     self.nodes = nodes
+    self.strings = {}
+    #value = {index : (StringType, data) }
+    self.string_types_str = {}
+    self.string_types = {}
+
+    self.objects = {}
+    #value = {index : {key : (StringType, data) }}
+    self.object_types_str = {}
+    self.object_types = {}
+
+    self.arrays = {}
+    #value = {index : {key : (StringType, data) }}
+    self.array_types_str = {}
+    self.array_types = {}
+
     if nodes == None:
       print >> sys.stderr, "This is a null TemplateTree"
       return
@@ -131,20 +148,15 @@ class TemplateTree():
             %(nodes[0].__class__, id(type(nodes[0])), id(ASTOutputNode))
           return
         key = m.hexdigest()
-
     self.key = key
-      
-    self.strings = {}
-    #value = {index : (StringType, data) }
-    self.string_types = {}
 
-    self.objects = {}
-    #value = {index : {key : (StringType, data) }}
-    self.object_types = {}
-    
-    self.arrays = {}
-    #value = {index : {key : (StringType, data) }}
-    self.array_types = {}
+  def match(self, target_tree):
+    if not isinstance(target_tree, TemplateTree):
+      print >> sys.stderr, "matching tree, target tree should be TemplateTree"
+      return False
+
+    if self.key != target_tree.key:
+      return False
 
   def get_length(self):
     return len(self.nodes)
@@ -155,9 +167,9 @@ class TemplateTree():
   '''
     { type : [json|js],
       tree : ['encoded_node1,encoded_node2...'|'{}'],
-      string_types : '{index : val },
-      object_types : '{index : {k:type_val} }',
-      array_types  : '{index : {k:type_val} }' }
+      string_types_str : '{index : val },
+      object_types_str : '{index : {k:type_val} }',
+      array_types_str  : '{index : {k:type_val} }' }
   '''
   def dumps(self):
     try:
@@ -166,9 +178,9 @@ class TemplateTree():
         obj['tree'] = self.nodes
       else:
         obj['tree'] = ','.join([b64encode(x.tag) for x in self.nodes])
-      obj['string_types'] = self.string_types
-      obj['object_types'] = self.object_types
-      obj['array_types'] = self.array_types
+      obj['string_types_str'] = self.string_types_str
+      obj['object_types_str'] = self.object_types_str
+      obj['array_types_str'] = self.array_types_str
       return json.dumps(obj)
     except Exception as e:
       displayErrorMsg("TemplateTree.dumps", str(e))
@@ -183,9 +195,27 @@ class TemplateTree():
       elif self.type == 'js':
         nodes = obj['tree'].split(',')
         self.nodes = [ASTOutputNode(b64decode(x)) for x in nodes]
-      self.string_types = obj['string_types']
-      self.object_types = obj['object_types']
-      self.array_types = obj['array_types']
+      self.string_types_str = obj['string_types_str']
+      for key in self.string_types_str:
+        self.string_types[key] = strings.loadStringTypeAndData(self.string_types_str[key])
+      print "successfully loaded %d string patterns" %(len(self.string_types_str))
+
+      self.object_types_str = obj['object_types_str']
+      for index in self.object_types_str:
+        self.object_types[index] = {}
+        for key in self.object_types_str[index]:
+          self.object_types[index][key] = \
+            strings.loadStringTypeAndData(self.object_types_str[index][key])
+      print "successfully loaded %d object patterns" %(len(self.object_types_str))  
+         
+      self.array_types_str = obj['array_types_str']
+      for index in self.array_types_str:
+        self.array_types[index] = {}
+        for key in self.array_types_str[index]:
+          self.array_types[index][key] = \
+            strings.loadStringTypeAndData(self.array_types_str[index][key])
+      print "successfully loaded %d array patterns" %(len(self.array_types_str)) 
+
       return True
     except Exception as e:
       displayErrorMsg("TemplateTree.loads", str(e))
@@ -285,11 +315,11 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         #fw.write(item+"\n")
         tree.strings[i] = vals
         tp, data = strings.analyzeStringListType(vals)
-        tree.string_types[i] = strings.dumpStringTypeAndData(tp, data)
-        #debug_json = strings.loadStringTypeAndData(tree.string_types[i])
+        tree.string_types_str[i] = strings.dumpStringTypeAndData(tp, data)
+        #debug_json = strings.loadStringTypeAndData(tree.string_types_str[i])
         #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])
         print "STRING%d: [TYPE:%s] [VALUE:%s]" \
-          %(i, tree.string_types[i],','.join(encoded_val))
+          %(i, tree.string_types_str[i],','.join(encoded_val))
       if node.tag == "Object":
         rs = analyzeObjectResultHelper(script_list, i)
         rs = extractObjectValues(rs)
@@ -304,7 +334,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           print "OBJECT%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
             %(i, type_dict[k], k, ','.join(encoded_val))
         tree.objects[i] = rs
-        tree.object_types[i] = type_dict
+        tree.object_types_str[i] = type_dict
       if node.tag == "Array":
         rs = analyzeArrayResultHelper(script_list, i)
         rs = extractObjectValues(rs)
@@ -314,13 +344,13 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           #fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
           tp, data = strings.analyzeStringListType(rs[k])
           type_dict[k] = strings.dumpStringTypeAndData(tp, data)
-          debug_json = strings.loadStringTypeAndData(type_dict[k])
+          #debug_json = strings.loadStringTypeAndData(type_dict[k])
           #print debug_json['val'].__class__.__name__
           #print "[DEBUG] type:%s val:%s" %(str(debug_json['type']),str(debug_json['val']) )
           print "ARRAY%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
             %(i, type_dict[k], k, ','.join(encoded_val))
         tree.arrays[i] = rs
-        tree.array_types[i] = type_dict
+        tree.array_types_str[i] = type_dict
       #except Exception as e:
       #  print "excpetion in analyzing node %d %s " %(i, str(e)) 
     
@@ -335,9 +365,12 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   fw_json = open(os.path.join(dst_path,"jsons"), 'w')
   for i in range(len(trees)):
     tree_val = trees[i].dumps()
+    url = scriptdict[trees[i].key][0][1]
+    storeTree(url,trees[i].key, tree_val)
     fw.write( "1 %.3d: %s\n" %(i, tree_val))
     new_tree = TemplateTree(None, None)
     new_tree.loads(tree_val)
+
     if trees[i].type == "js":
       fw.write( "2 %.3d: %s\n" %(i, getTreeSeq(new_tree.nodes)))
     elif trees[i].type == 'json':
@@ -346,6 +379,22 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   fw_json.close()
   print "generate %d trees for %d scripts uniqe[%d]" \
     %(len(trees), total_script_blocks, total_uniq_script_blocks)
+
+def getTreesForDomainFromDB(domain):
+  tree_strings = fetchTrees(domain)
+  if tree_strings == None:
+    return None
+
+  tree_dict = {} #{key : TemplateTree}
+  for key in tree_strings:
+    tree = TemplateTree(None, None)
+    try:
+      tree.loads(tree_strings[key])
+      tree_dict[key] = tree
+    except Exception as e:
+      displayErrorMsg("getTreesForDomainFromDB",str(e))
+  
+  return tree_dict  
 
 def getTrees(path):
   f = open(path)
