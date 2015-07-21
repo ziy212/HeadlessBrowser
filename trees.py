@@ -145,11 +145,11 @@ def matchTreesWithScriptsFromURLList(tree_path, url_path):
     %(match_uniq_script,match_script, nonmatch_uniq_script, nonmatch_script, nonmatch_tree)
 
 def matchTreesFromDomainWithScriptsFromURLList(domain, url_list_path):
-  trees = getTreesForDomainFromDB(domain)
-  if trees == None or len(trees) == 0:
+  treedict = getTreesForDomainFromDB(domain)
+  if treedict == None or len(treedict) == 0:
     print "failed to fetch trees for domain ", domain
     return
-  print "fetched %d trees for domain" %(len(trees))
+  print "fetched %d trees for domain" %(len(treedict))
   scriptdict, count_dict, json_count = extractScriptsAndGenerateASTNodesFromURLListFinerBlock(url_list_path)
   match_script = 0
   match_uniq_script = 0

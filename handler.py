@@ -314,7 +314,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         #item = 'string%d: %s' %(i, ','.join(encoded_val))
         #fw.write(item+"\n")
         tree.strings[i] = vals
-        tp, data = strings.analyzeStringListType(vals)
+        tp, data, sample_size = strings.analyzeStringListType(vals)
         tree.string_types_str[i] = strings.dumpStringTypeAndData(tp, data)
         #debug_json = strings.loadStringTypeAndData(tree.string_types_str[i])
         #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])

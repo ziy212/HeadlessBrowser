@@ -251,12 +251,13 @@ def dumpStringTypeAndData(tp, data):
 
 	return json.dumps(obj)
 
-#return (type, value)
+#return (type, value, size_of_sample)
 def analyzeStringListType(sample_list):
 	if len(sample_list) < MIN_SAMPLE_SIZE:
 		print >>sys.stderr, "error: sample size too small: %d " %len(sample_list)
-		return None, None
+		return None, None, len(sample_list)
 
+	size_of_sample = len(sample_list)
 	# Test CONST
 	sample_dict = {}
 	for item in sample_list:
@@ -267,14 +268,14 @@ def analyzeStringListType(sample_list):
 			sample_dict[item] += 1
 
 	if len(sample_dict) == 1:
-		return StringType.CONST, sample_dict.values()[0]
+		return StringType.CONST, sample_dict.values()[0], size_of_sample
 
   # Test ENUM
 	percent = sorted(\
   	[float(sample_dict[k])/float(len(sample_list)) \
   		for k in sample_dict])
-	if percent[0] > ENUM_THRESHOLD:
-		return StringType.ENUM, set(sample_dict.keys())
+	if percent[0] > ENUM_THRESHOLD and size_of_sample >= 10:
+		return StringType.ENUM, set(sample_dict.keys()), size_of_sample
 
 	# Test URI
 	unquoted_sample_list = [urllib.unquote_plus(x) for x in sample_list]
@@ -294,7 +295,7 @@ def analyzeStringListType(sample_list):
 	 		pass
 	 		#print str(e)
 	if url_count == len(unquoted_sample_list):
-		return StringType.URI, domain_set
+		return StringType.URI, domain_set, size_of_sample
 
 	# Test NUMBER
 	numeric_count = 0
@@ -302,7 +303,7 @@ def analyzeStringListType(sample_list):
 		if stringIsNumeric(item):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
-		return StringType.NUMBER, ''
+		return StringType.NUMBER, '', size_of_sample
 
 	# Test QUOTED_NUMBER
 	numeric_count = 0
@@ -312,7 +313,7 @@ def analyzeStringListType(sample_list):
 			(item[0] == '"' or item[0] == "'"):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
-		return StringType.QUOTED_NUMBER, ''
+		return StringType.QUOTED_NUMBER, '', size_of_sample
 
 	# fixed_len, min_len, max_len
 	patt = Pattern(domain_set=domain_set)
@@ -341,7 +342,7 @@ def analyzeStringListType(sample_list):
 	if len(special_char_set) > 0:
 		patt.special_char_set = special_char_set
 
-	return StringType.OTHER, patt
+	return StringType.OTHER, patt, size_of_sample
 
 #analyzeStringListType(['YES','YES','NO','NO','NO','YES','NO','NO','NO','YES','NO']) 
 
