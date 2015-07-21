@@ -56,6 +56,10 @@ class NodePattern():
 				print "[COMPARE] QUOTED_NUMBER error %s not a quoted number " %(val_str)
 				return False
 		elif self.tp == StringType.URI:
+			d_set = getDomainsFromString(val_str)
+			pass
+		
+		return True
 
 	def loads(self, data_str):
 		try:
