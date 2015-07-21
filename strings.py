@@ -18,7 +18,7 @@ class StringType(Enum):
   INSUFFICIENT = "INSUFFICIENT"
 
 StringTypeDict = {\
-	'INSUFFICIENT' : StringType.INSUFFICIENT
+	'INSUFFICIENT' : StringType.INSUFFICIENT,
   'CONST' : StringType.CONST, \
   'ENUM' : StringType.ENUM, \
   'NUMBER' : StringType.NUMBER, \
@@ -27,9 +27,12 @@ StringTypeDict = {\
   'OTHER' : StringType.OTHER}
 
 class NodePattern():
-	def __init__(self, tp, val):
+	def __init__(self, tp=StringType.INSUFFICIENT, val=None):
 		self.tp = tp
 		self.val = val
+	
+	def is_insufficient(self):
+		return self.tp == StringType.INSUFFICIENT
 
 	def match(self, val_str):
 		if self.tp == StringType.INSUFFICIENT:
@@ -46,7 +49,47 @@ class NodePattern():
 				return False
 
 	def loads(self, data_str):
-		pass
+		try:
+			obj = json.loads(data_str)
+		except Exception as e:
+			displayErrorMsg('NodePattern.loads', str(e) + ' ' + str(data_str))
+			return False
+
+		if obj == None or obj['type'] == "ERROR":
+			displayErrorMsg('NodePattern.loads', 'Object is invalid: ' + str(data_str))
+			return False
+
+		try:
+			tp = StringTypeDict[obj['type']]
+			self.tp = tp
+			if tp == StringType.CONST:
+				self.val = b64decode(obj['val'])
+			elif tp == StringType.ENUM: 
+				elems = obj['val'].split(',')
+				decoded_vals = [b64decode(x) for x in elems]
+				self.val = set(decoded_vals)
+			elif tp == StringType.INSUFFICIENT: 
+				elems = obj['val'].split(',')
+				decoded_vals = [b64decode(x) for x in elems]
+				self.val = decoded_vals
+			elif tp == StringType.NUMBER:
+				self.val = ""
+			elif tp == StringType.QUOTED_NUMBER:
+				self.val = ""
+			elif tp == StringType.URI:
+				elems = obj['val'].split(',')
+				decoded_vals = [b64decode(x) for x in elems]
+				self.val = set(decoded_vals)
+			elif tp == StringType.OTHER:
+				val = b64decode(obj['val'])
+				val_obj = json.loads(val)
+				patt = Pattern()
+				patt.loads(val_obj)
+				self.val = patt
+			return True
+		except Exception as e:
+			displayErrorMsg("NodePattern.loads 2",str(e) + ' ' + str(data_str))
+			return False
 
 	def dumps(self):
 		obj = {'type':'ERROR'}
@@ -76,7 +119,9 @@ class NodePattern():
 		# return {'type':'OTHER', 'val':"decoded_pattern_string"}
 		if tp == StringType.INSUFFICIENT:
 			obj['type'] = "INSUFFICIENT"
-			obj['val'] = [b64encode(x) for x in self.val]
+			encoded_vals = [b64encode(x) for x in self.val]
+			val = ','.join(encoded_vals)
+			obj['val'] = val
 		elif tp == StringType.CONST:
 			obj['type'] = "CONST"
 			obj['val'] = b64encode(str(self.val))
@@ -293,7 +338,7 @@ def dumpStringTypeAndData(tp, data):
 def analyzeStringListType(sample_list):
 	if len(sample_list) < MIN_SAMPLE_SIZE:
 		print >>sys.stderr, "error: sample size too small: %d " %len(sample_list)
-		return StringType.INSUFFICIENT, sample_list, len(sample_list)
+		return NodePattern(StringType.INSUFFICIENT, sample_list)
 
 	size_of_sample = len(sample_list)
 	# Test CONST
@@ -306,14 +351,14 @@ def analyzeStringListType(sample_list):
 			sample_dict[item] += 1
 
 	if len(sample_dict) == 1:
-		return StringType.CONST, sample_dict.values()[0], size_of_sample
+		return NodePattern(StringType.CONST, sample_dict.values()[0])
 
   # Test ENUM
 	percent = sorted(\
   	[float(sample_dict[k])/float(len(sample_list)) \
   		for k in sample_dict])
 	if percent[0] > ENUM_THRESHOLD and size_of_sample >= 10:
-		return StringType.ENUM, set(sample_dict.keys()), size_of_sample
+		return NodePattern(StringType.ENUM, set(sample_dict.keys()))
 
 	# Test URI
 	unquoted_sample_list = [urllib.unquote_plus(x) for x in sample_list]
@@ -333,7 +378,7 @@ def analyzeStringListType(sample_list):
 	 		pass
 	 		#print str(e)
 	if url_count == len(unquoted_sample_list):
-		return StringType.URI, domain_set, size_of_sample
+		return NodePattern(StringType.URI, domain_set)
 
 	# Test NUMBER
 	numeric_count = 0
@@ -341,7 +386,7 @@ def analyzeStringListType(sample_list):
 		if stringIsNumeric(item):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
-		return StringType.NUMBER, '', size_of_sample
+		return NodePattern(StringType.NUMBER, '')
 
 	# Test QUOTED_NUMBER
 	numeric_count = 0
@@ -351,7 +396,7 @@ def analyzeStringListType(sample_list):
 			(item[0] == '"' or item[0] == "'"):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
-		return StringType.QUOTED_NUMBER, '', size_of_sample
+		return NodePattern(StringType.QUOTED_NUMBER, '')
 
 	# fixed_len, min_len, max_len
 	patt = Pattern(domain_set=domain_set)
@@ -380,7 +425,7 @@ def analyzeStringListType(sample_list):
 	if len(special_char_set) > 0:
 		patt.special_char_set = special_char_set
 
-	return StringType.OTHER, patt, size_of_sample
+	return NodePattern(StringType.OTHER, patt)
 
 def getEffectiveDomainFromURL(url):
   try:

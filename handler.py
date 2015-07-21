@@ -15,7 +15,8 @@ from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
 import sys, os, re, json, hashlib
-import strings
+from strings import NodePattern
+from strings import analyzeStringListType
 
 
 def extractAndStoreScriptsFromFileList(file_list_path):
@@ -117,11 +118,11 @@ class TemplateTree():
     self.array_types = {}
 
     if nodes == None:
-      print >> sys.stderr, "This is a null TemplateTree"
+      #print >> sys.stderr, "This is a null TemplateTree"
       return
 
     if len(nodes) == 0:
-      print >> sys.stderr, "TemplateTree nodes' length is zero"
+      #print >> sys.stderr, "TemplateTree nodes' length is zero"
       return
 
     if isinstance(nodes, dict):
@@ -226,23 +227,29 @@ class TemplateTree():
         self.nodes = [ASTOutputNode(b64decode(x)) for x in nodes]
       self.string_types_str = obj['string_types_str']
       for key in self.string_types_str:
-        self.string_types[key] = strings.loadStringTypeAndData(self.string_types_str[key])
+        node_pattern = NodePattern()
+        node_pattern.loads(self.string_types_str[key])
+        self.string_types[key] = node_pattern
       print "successfully loaded %d string patterns" %(len(self.string_types_str))
 
       self.object_types_str = obj['object_types_str']
       for index in self.object_types_str:
         self.object_types[index] = {}
         for key in self.object_types_str[index]:
-          self.object_types[index][key] = \
-            strings.loadStringTypeAndData(self.object_types_str[index][key])
+          node_pattern = NodePattern()
+          node_pattern.loads(self.object_types_str[index][key])
+          self.object_types[index][key] = node_pattern
+            
       print "successfully loaded %d object patterns" %(len(self.object_types_str))  
          
       self.array_types_str = obj['array_types_str']
       for index in self.array_types_str:
         self.array_types[index] = {}
         for key in self.array_types_str[index]:
-          self.array_types[index][key] = \
-            strings.loadStringTypeAndData(self.array_types_str[index][key])
+          node_pattern = NodePattern()
+          node_pattern.loads(self.array_types_str[index][key])
+          self.array_types[index][key] = node_pattern
+            
       print "successfully loaded %d array patterns" %(len(self.array_types_str)) 
 
       return True
@@ -303,6 +310,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   #start to analyze trees
   #scriptdict[tree_key] = [(script, url, tree, index)]
   trees = []
+  insufficient_urls = {}
   keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
   for key in keys:
     name = "%d_%s" %(len(scriptdict[key]),key)
@@ -336,57 +344,93 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
     script_length = len(script_list)
     for i in range(seq_length):
       node = script_list[0][2].nodes[i]
-      #try:
-      if node.tag == "String":
-        vals = [item[2].nodes[i].value for item in script_list]
-        encoded_val = [b64encode(x) for x in vals]
-        #item = 'string%d: %s' %(i, ','.join(encoded_val))
-        #fw.write(item+"\n")
-        tree.strings[i] = vals
-        tp, data, sample_size = strings.analyzeStringListType(vals)
-        tree.string_types_str[i] = strings.dumpStringTypeAndData(tp, data)
-        #debug_json = strings.loadStringTypeAndData(tree.string_types_str[i])
-        #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])
-        print "STRING%d: [TYPE:%s] [VALUE:%s]" \
-          %(i, tree.string_types_str[i],','.join(encoded_val))
-      if node.tag == "Object":
-        rs = analyzeObjectResultHelper(script_list, i)
-        rs = extractObjectValues(rs)
-        type_dict = {}
-        for k in rs:
-          encoded_val = [b64encode(x) for x in rs[k]]
-          #fw.write("object%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
-          tp, data, sample_size = strings.analyzeStringListType(rs[k])
-          type_dict[k] = strings.dumpStringTypeAndData(tp, data)
-          #debug_json = strings.loadStringTypeAndData(type_dict[k])
-          #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])
-          print "OBJECT%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
-            %(i, type_dict[k], k, ','.join(encoded_val))
-        tree.objects[i] = rs
-        tree.object_types_str[i] = type_dict
-      if node.tag == "Array":
-        rs = analyzeArrayResultHelper(script_list, i)
-        rs = extractObjectValues(rs)
-        type_dict = {}
-        for k in rs:
-          encoded_val = [b64encode(x) for x in rs[k]]
-          #fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
-          tp, data, sample_size = strings.analyzeStringListType(rs[k])
-          type_dict[k] = strings.dumpStringTypeAndData(tp, data)
-          #debug_json = strings.loadStringTypeAndData(type_dict[k])
-          #print debug_json['val'].__class__.__name__
-          #print "[DEBUG] type:%s val:%s" %(str(debug_json['type']),str(debug_json['val']) )
-          print "ARRAY%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
-            %(i, type_dict[k], k, ','.join(encoded_val))
-        tree.arrays[i] = rs
-        tree.array_types_str[i] = type_dict
-      #except Exception as e:
-      #  print "excpetion in analyzing node %d %s " %(i, str(e)) 
+      try:
+        if node.tag == "String":
+          vals = [item[2].nodes[i].value for item in script_list]
+          encoded_val = [b64encode(x) for x in vals]
+          #item = 'string%d: %s' %(i, ','.join(encoded_val))
+          #fw.write(item+"\n")
+          tree.strings[i] = vals
+          node_pattern = analyzeStringListType(vals)
+          tree.string_types_str[i] = node_pattern.dumps()
+          if node_pattern.is_insufficient():
+            if not key in insufficient_urls:
+              insufficient_urls[key] = \
+                [item[1] for item in script_list]
+            else:
+              insufficient_urls[key] += [item[1] for item in script_list]
+          # testing
+          #node_pattern = NodePattern()
+          #r = node_pattern.loads(tree.string_types_str[i])
+          #if r == False:
+          #  print "node_pattern failed to load: "+tree.string_types_str[i]
+          #else:
+          #  print "successfully loaded tree: "+tree.string_types_str[i]
+          print "STRING%d: [TYPE:%s] [VALUE:%s]" \
+            %(i, tree.string_types_str[i],','.join(encoded_val))
+        if node.tag == "Object":
+          rs = analyzeObjectResultHelper(script_list, i)
+          rs = extractObjectValues(rs)
+          type_dict = {}
+          for k in rs:
+            encoded_val = [b64encode(x) for x in rs[k]]
+            node_pattern = analyzeStringListType(rs[k])
+            type_dict[k] = node_pattern.dumps()
+            if node_pattern.is_insufficient():
+              if not key in insufficient_urls:
+                insufficient_urls[key] = \
+                  [item[1] for item in script_list]
+              else:
+                insufficient_urls[key] += [item[1] for item in script_list]
+            #testing
+            #node_pattern = NodePattern()
+            #r = node_pattern.loads(type_dict[k])
+            #if r == False:
+            #  print "node_pattern failed to load: "+type_dict[k]
+            #else:
+            #  print "successfully loaded tree: "+type_dict[k]
+            print "OBJECT%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
+              %(i, type_dict[k], k, ','.join(encoded_val))
+          tree.objects[i] = rs
+          tree.object_types_str[i] = type_dict
+        if node.tag == "Array":
+          rs = analyzeArrayResultHelper(script_list, i)
+          rs = extractObjectValues(rs)
+          type_dict = {}
+          for k in rs:
+            encoded_val = [b64encode(x) for x in rs[k]]
+            #fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
+            node_pattern = analyzeStringListType(rs[k])
+            type_dict[k] = node_pattern.dumps()
+            if node_pattern.is_insufficient():
+              if not key in insufficient_urls:
+                insufficient_urls[key] = \
+                  [item[1] for item in script_list]
+              else:
+                insufficient_urls[key] += [item[1] for item in script_list]
+            #testing
+            #node_pattern = NodePattern()
+            #r = node_pattern.loads(type_dict[k])
+            #if r == False:
+            #  print "node_pattern failed to load: "+type_dict[k]
+            #else:
+            #  print "successfully loaded tree: "+type_dict[k]
+            print "ARRAY%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
+              %(i, type_dict[k], k, ','.join(encoded_val))
+          tree.arrays[i] = rs
+          tree.array_types_str[i] = type_dict
+      except Exception as e:
+        displayErrorMsg("fetchAndProcessScriptsOfURLsFromFile",\
+           "excpetion in analyzing node %d %s " %(i, str(e))) 
     
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
     trees.append(tree)
     
     fw.close()
+  
+  # display insufficient_urls
+  #for key in insufficient_urls:
+  #  print "URL: %s %s " %(key, insufficient_urls[key])
 
   #store trees
   trees = sorted(trees, key=lambda x:x.get_length())
@@ -408,6 +452,8 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
   fw_json.close()
   print "generate %d trees for %d scripts uniqe[%d]" \
     %(len(trees), total_script_blocks, total_uniq_script_blocks)
+
+  return insufficient_urls
 
 def getTreesForDomainFromDB(domain):
   tree_strings = fetchTrees(domain)
