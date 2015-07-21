@@ -159,8 +159,20 @@ def matchTreesFromDomainWithScriptsFromURLList(domain, url_list_path):
   nomatch_list = []
   for key in scriptdict:
     if key in treedict:
-      match_uniq_script += len(scriptdict[key])
-      match_script += count_dict[key]
+      flag = True
+      for item in scriptdict[key]:
+        target_tree = item[2]
+        if not treedict[key].match(target_tree):
+          print "Matching failure "
+          print "  template_tree: %s " %(treedict[key].debug())
+          print "  target_tree:   %s " %(target_tree.debug())
+          nonmatch_uniq_script += len(scriptdict[key])
+          nonmatch_script += count_dict[key]
+          flag = False
+          break
+      if flag:
+        match_uniq_script += len(scriptdict[key])
+        match_script += count_dict[key]
     else:
       nonmatch_uniq_script += len(scriptdict[key])
       nonmatch_script += count_dict[key]

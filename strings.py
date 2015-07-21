@@ -57,8 +57,14 @@ class NodePattern():
 				return False
 		elif self.tp == StringType.URI:
 			d_set = getDomainsFromString(val_str)
-			pass
-		
+			if not d_set.issubset(self.val):
+				print "[COMPARE] URI error %s not a subset of %s " %(str(val_str), str(self.val) )
+				return False
+		elif self.tp == StringType.OTHER:
+			if not self.val.check(val_str):
+				print "[COMPARE] OTHER error %s not meeting rq of %s" \
+					%(val_str, self.val.dumps())
+				return False
 		return True
 
 	def loads(self, data_str):
