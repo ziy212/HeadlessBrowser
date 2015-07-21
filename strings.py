@@ -4,7 +4,7 @@ from urlparse import urlparse
 from base64 import b64encode
 from base64 import b64decode
 
-MIN_SAMPLE_SIZE = 1
+MIN_SAMPLE_SIZE = 5
 ENUM_THRESHOLD = 0.3
 PATTERN_MIN_PREFIX = 3
 
@@ -15,14 +15,92 @@ class StringType(Enum):
   QUOTED_NUMBER = "QUOTED_NUMBER"
   URI = "URI"
   OTHER = "OTHER"
+  INSUFFICIENT = "INSUFFICIENT"
 
 StringTypeDict = {\
+	'INSUFFICIENT' : StringType.INSUFFICIENT
   'CONST' : StringType.CONST, \
   'ENUM' : StringType.ENUM, \
   'NUMBER' : StringType.NUMBER, \
   'QUOTED_NUMBER' : StringType.QUOTED_NUMBER, \
   'URI' : StringType.URI, \
   'OTHER' : StringType.OTHER}
+
+class NodePattern():
+	def __init__(self, tp, val):
+		self.tp = tp
+		self.val = val
+
+	def match(self, val_str):
+		if self.tp == StringType.INSUFFICIENT:
+			debug_str = "Length:[%d] Vals:[%s]" %(len(self.val), str(self.val))
+			print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
+			return True
+		elif self.tp == StringType.CONST:
+			if self.tp != val_str:
+				print '[COMPARE] CONST error %s vs %s ' %(str(self.val), str(val_str))
+				return False
+		elif self.tp == StringType.ENUM:
+			if val_str not in self.val:
+				print "[COMPARE] ENUM error %s not in %s " %(str(val_str), str(self.val))
+				return False
+
+	def loads(self, data_str):
+		pass
+
+	def dumps(self):
+		obj = {'type':'ERROR'}
+		tp = self.tp
+		# INSUFFICIENT:
+		# val is the sample list
+		# return {'type':'INSUFFICIENT', 'val': "decoded_sample1, decoded_sample2"}
+
+		# CONST:
+		# val is the const value
+		# return {'type':'CONST', 'val':single_value}
+		
+		# ENUM:
+		# val is the `set` of enum value
+		# return {'type':'ENUM', 'val':"decoded_val1,decoded_val2"}
+		
+		# NUMBER/QUOTED_NUMBER:
+		# val is ""
+		# return {'type':'NUMBER', 'val':''} 
+		
+		# URI:
+		# val is the `set` of domain value
+		# return {'type':'URI', 'val':"decoded_domain1,decoded_domain2"}
+
+		# OTHER:
+		# val is Pattern object
+		# return {'type':'OTHER', 'val':"decoded_pattern_string"}
+		if tp == StringType.INSUFFICIENT:
+			obj['type'] = "INSUFFICIENT"
+			obj['val'] = [b64encode(x) for x in self.val]
+		elif tp == StringType.CONST:
+			obj['type'] = "CONST"
+			obj['val'] = b64encode(str(self.val))
+		elif tp == StringType.ENUM: 
+			encoded_vals = [b64encode(x) for x in self.val]
+			val = ','.join(encoded_vals)
+			obj['type'] = "ENUM"
+			obj['val'] = val
+		elif tp == StringType.NUMBER:
+			obj['type'] = "NUMBER"
+			obj['val'] = ''
+		elif tp == StringType.QUOTED_NUMBER:
+			obj['type'] = "QUOTED_NUMBER"
+			obj['val'] = ''
+		elif tp == StringType.URI:
+			encoded_vals = [b64encode(x) for x in self.val]
+			val = ','.join(encoded_vals)
+			obj['type'] = "URI"
+			obj['val'] = val
+		elif tp == StringType.OTHER:
+			obj['type'] = "OTHER"
+			obj['val'] = b64encode(self.val.dumps())
+
+		return json.dumps(obj)
 
 class Pattern():
 	def __init__(self, fixed_len=-1,\
@@ -110,74 +188,6 @@ class Pattern():
 	def __str__(self):
 		return self.dumps()
 
-def getEffectiveDomainFromURL(url):
-  try:
-    o = tldextract.extract(url.lower())
-    return o.domain + '.' + o.suffix
-  except Exception as e:
-    print >> sys.stderr, "error in getting getEffectiveDomain ", str(e)
-    return None
-
-def getDomainsFromString(string):
-	string = string.lower()
-	pattern = re.compile("https?\:\/\/")
-	pos = 0
-	rs = set()
-	try:
-		while True:
-			m = pattern.search(string, pos)
-			if m == None:
-				break
-			domain = getEffectiveDomainFromURL(string[m.start():])
-			rs.add(domain)
-			pos = m.start() + 1
-		return rs
-	except Exception as e:
-		print >> sys.stderr, "error in getDomainsFromString ", str(e)
-		return set()
-
-def stringIsNumeric(string):
-	try:
-		if string.isdigit():
-			return True
-		else:
-			val = float(string)
-			return True
-	except:
-		return False
-
-def stringIsAlphanumericUnderscore(string):
-	pattern = "^\w+$"
-	try:
-		m = re.match(pattern, string)
-		return m != None
-	except Exception as e:
-		print >> sys.stderr, "error in stringIsAlphanumericUnderscore ", str(e)
-		return False
-
-def getSpecialCharacters(string):
-	pattern = "\W"
-	try:
-		rs = re.findall(pattern, string)
-	except Exception as e:
-		print >> sys.stderr, "error in getSpecialCharacters ", str(e)
-		return set()
-	char_set = set(rs)
-	return char_set
-
-def compareStringValues(type_obj, val):
-	if type_obj['type'] == 'ERROR':
-		print "[COMPARE] type_obj's type is ERROR"
-		return False
-	elif type_obj['type'] == StringType.CONST:
-		if type_obj['val'] != val:
-			print '[COMPARE] CONST error %s vs %s ' %(str(type_obj['val']), str(val))
-			return False
-	elif type_obj['type'] == StringType.ENUM:
-		if val not in type_obj['val']:
-			print "[COMPARE] ENUM error %s not in %s " %(str(val), str(type_obj['val']))
-			return False
-
 def loadStringTypeAndData(data):
 	try:
 		obj = json.loads(data)
@@ -198,6 +208,10 @@ def loadStringTypeAndData(data):
 			elems = obj['val'].split(',')
 			decoded_vals = [b64decode(x) for x in elems]
 			obj['val'] = set(decoded_vals)
+		elif tp == StringType.INSUFFICIENT: 
+			elems = obj['val'].split(',')
+			decoded_vals = [b64decode(x) for x in elems]
+			obj['val'] = decoded_vals
 		elif tp == StringType.NUMBER:
 			obj['val'] = ""
 		elif tp == StringType.QUOTED_NUMBER:
@@ -220,6 +234,10 @@ def loadStringTypeAndData(data):
 
 def dumpStringTypeAndData(tp, data):
 	obj = {'type':'ERROR'}
+	# INSUFFICIENT:
+	# data is the sample list
+	# return {'type':'INSUFFICIENT', 'val': "decoded_sample1, decoded_sample2"}
+
 	# CONST:
 	# data is the const value
 	# return {'type':'CONST', 'val':single_value}
@@ -239,7 +257,10 @@ def dumpStringTypeAndData(tp, data):
 	# OTHER:
 	# data is Pattern object
 	# return {'type':'OTHER', 'val':"decoded_pattern_string"}
-	if tp == StringType.CONST:
+	if tp == StringType.INSUFFICIENT:
+		obj['type'] = "INSUFFICIENT"
+		obj['val'] = [b64encode(x) for x in data]
+	elif tp == StringType.CONST:
 		obj['type'] = "CONST"
 		obj['val'] = b64encode(str(data))
 	elif tp == StringType.ENUM: 
@@ -263,12 +284,16 @@ def dumpStringTypeAndData(tp, data):
 		obj['val'] = b64encode(data.dumps())
 
 	return json.dumps(obj)
+#===================================
 
+'''
+	Functions used for analyzing samples
+'''
 #return (type, value, size_of_sample)
 def analyzeStringListType(sample_list):
 	if len(sample_list) < MIN_SAMPLE_SIZE:
 		print >>sys.stderr, "error: sample size too small: %d " %len(sample_list)
-		return None, None, len(sample_list)
+		return StringType.INSUFFICIENT, sample_list, len(sample_list)
 
 	size_of_sample = len(sample_list)
 	# Test CONST
@@ -356,6 +381,62 @@ def analyzeStringListType(sample_list):
 		patt.special_char_set = special_char_set
 
 	return StringType.OTHER, patt, size_of_sample
+
+def getEffectiveDomainFromURL(url):
+  try:
+    o = tldextract.extract(url.lower())
+    return o.domain + '.' + o.suffix
+  except Exception as e:
+    print >> sys.stderr, "error in getting getEffectiveDomain ", str(e)
+    return None
+
+def getDomainsFromString(string):
+	string = string.lower()
+	pattern = re.compile("https?\:\/\/")
+	pos = 0
+	rs = set()
+	try:
+		while True:
+			m = pattern.search(string, pos)
+			if m == None:
+				break
+			domain = getEffectiveDomainFromURL(string[m.start():])
+			rs.add(domain)
+			pos = m.start() + 1
+		return rs
+	except Exception as e:
+		print >> sys.stderr, "error in getDomainsFromString ", str(e)
+		return set()
+
+def stringIsNumeric(string):
+	try:
+		if string.isdigit():
+			return True
+		else:
+			val = float(string)
+			return True
+	except:
+		return False
+
+def stringIsAlphanumericUnderscore(string):
+	pattern = "^\w+$"
+	try:
+		m = re.match(pattern, string)
+		return m != None
+	except Exception as e:
+		print >> sys.stderr, "error in stringIsAlphanumericUnderscore ", str(e)
+		return False
+
+def getSpecialCharacters(string):
+	pattern = "\W"
+	try:
+		rs = re.findall(pattern, string)
+	except Exception as e:
+		print >> sys.stderr, "error in getSpecialCharacters ", str(e)
+		return set()
+	char_set = set(rs)
+	return char_set
+#============Helper methods========================
 
 #analyzeStringListType(['YES','YES','NO','NO','NO','YES','NO','NO','NO','YES','NO']) 
 
