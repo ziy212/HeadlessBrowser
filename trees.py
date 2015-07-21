@@ -179,7 +179,7 @@ def matchTreesFromDomainWithScript(domain, script):
   is_json = False
   rs, sc = analyzeJSCodesFinerBlock(script)
   if rs == None:
-    rs = analyzeJSON(inline)
+    rs = analyzeJSON(script)
     is_json = True
   if rs == None:
     print "no script nor json"
