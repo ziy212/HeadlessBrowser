@@ -169,12 +169,45 @@ def matchTreesFromDomainWithScriptsFromURLList(domain, url_list_path):
   print "matched scripts:%d[%d] \n nonmatched scripts:%d[%d] nonmatch_tree:%d" \
     %(match_uniq_script,match_script, nonmatch_uniq_script, nonmatch_script, nonmatch_tree)
 
+def matchTreesFromDomainWithScript(domain, script):
+  treedict = getTreesForDomainFromDB(domain)
+  if treedict == None or len(treedict) == 0:
+    print "failed to fetch trees for domain ", domain
+    return
+  print "fetched %d trees for domain" %(len(treedict))
+  
+  is_json = False
+  rs, sc = analyzeJSCodesFinerBlock(script)
+  if rs == None:
+    rs = analyzeJSON(inline)
+    is_json = True
+  if rs == None:
+    print "no script nor json"
+    return []
+
+  allowed_sc = []
+  print "generate %d subtrees for target script" %(len(rs))
+  for index in range(len(rs)):
+    seq = rs[index]
+    tree = TemplateTree(seq, None)
+    key = tree.key
+
+    #comparison
+    if key in treedict:
+      allowed_sc.append(sc[index])
+
+  print "allowed %d blocks for target scripts" %(len(allowed_sc))
+  return allowed_sc
+
 
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  #matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #getTrees(sys.argv[1])
+  rs = matchTreesFromDomainWithScript(open(sys.argv[1]).read())
+  for item in rs:
+    print '[S] %s' % (item)
 
 
 if __name__ == "__main__":

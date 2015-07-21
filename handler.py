@@ -150,6 +150,22 @@ class TemplateTree():
         key = m.hexdigest()
     self.key = key
 
+  def debug(self):
+    if self.type == "json":
+      val = ','.join(sorted(nodes.keys()))
+    else:
+      val = ""
+      for i in range(len(self.nodes)):
+        item = self.nodes[i]
+        if item.tag == 'String':
+          v = ' ['+item.value+']'
+        elif item.tag == 'Array' or item.tag =='Object':
+          v = ' ['+str(item.value)+']'
+        else:
+          v = ' ['+item.tag+']'
+      val += v
+    return val
+
   def match(self, target_tree):
     if not isinstance(target_tree, TemplateTree):
       print >> sys.stderr, "matching tree, target tree should be TemplateTree"
@@ -157,6 +173,18 @@ class TemplateTree():
 
     if self.key != target_tree.key:
       return False
+
+    if self.type == 'json' and target_tree.type == 'json':
+      return True
+    elif self.type != target_tree.type:
+      return False
+
+    length = len(target_tree.nodes)
+    for i in range(length):
+      if self.nodes[i].tag != target_tree.nodes[i].tag:
+        return False
+      if self.nodes[i].tag == 'String':
+        
 
   def get_length(self):
     return len(self.nodes)
@@ -327,7 +355,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         for k in rs:
           encoded_val = [b64encode(x) for x in rs[k]]
           #fw.write("object%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
-          tp, data = strings.analyzeStringListType(rs[k])
+          tp, data, sample_size = strings.analyzeStringListType(rs[k])
           type_dict[k] = strings.dumpStringTypeAndData(tp, data)
           #debug_json = strings.loadStringTypeAndData(type_dict[k])
           #print "[DEBUG] type:%s val:%s" %(debug_json['type'],debug_json['val'])
@@ -342,7 +370,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
         for k in rs:
           encoded_val = [b64encode(x) for x in rs[k]]
           #fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
-          tp, data = strings.analyzeStringListType(rs[k])
+          tp, data, sample_size = strings.analyzeStringListType(rs[k])
           type_dict[k] = strings.dumpStringTypeAndData(tp, data)
           #debug_json = strings.loadStringTypeAndData(type_dict[k])
           #print debug_json['val'].__class__.__name__

@@ -165,6 +165,19 @@ def getSpecialCharacters(string):
 	char_set = set(rs)
 	return char_set
 
+def compareStringValues(type_obj, val):
+	if type_obj['type'] == 'ERROR':
+		print "[COMPARE] type_obj's type is ERROR"
+		return False
+	elif type_obj['type'] == StringType.CONST:
+		if type_obj['val'] != val:
+			print '[COMPARE] CONST error %s vs %s ' %(str(type_obj['val']), str(val))
+			return False
+	elif type_obj['type'] == StringType.ENUM:
+		if val not in type_obj['val']:
+			print "[COMPARE] ENUM error %s not in %s " %(str(val), str(type_obj['val']))
+			return False
+
 def loadStringTypeAndData(data):
 	try:
 		obj = json.loads(data)
