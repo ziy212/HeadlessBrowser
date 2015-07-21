@@ -184,7 +184,8 @@ class TemplateTree():
       if self.nodes[i].tag != target_tree.nodes[i].tag:
         return False
       if self.nodes[i].tag == 'String':
-        
+        #Not done....
+        return False  
 
   def get_length(self):
     return len(self.nodes)
