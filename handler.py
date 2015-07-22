@@ -213,6 +213,7 @@ class TemplateTree():
       elif self.nodes[i].tag == 'Array':
         target_obj = target_tree.nodes[i].value
         for k in target_obj:
+          print "k's class: ",k.__class__.__name__
           if isinstance(target_obj[k], list):
             for item in target_obj[k]:
               if not self.array_types[str(i)][k].match(item):
