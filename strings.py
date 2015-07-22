@@ -36,7 +36,7 @@ class NodePattern():
 
 	def match(self, val_str):
 		if self.tp == StringType.INSUFFICIENT:
-			debug_str = "Length:[%d] Vals:[%s]" %(len(self.val), str(self.val))
+			debug_str = "Length:[%d][%s] Vals:[%s]" %(len(self.val),str(self.val), str(self.val))
 			print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
 			return True
 		elif self.tp == StringType.CONST:

@@ -202,6 +202,7 @@ class TemplateTree():
           return False
       elif self.nodes[i].tag == 'Object':
         target_obj = target_tree.nodes[i].value
+        print "DEBUG: ",str(target_obj)
         for k in target_obj:
           if isinstance(target_obj[k], list):
             for item in target_obj[k]:
