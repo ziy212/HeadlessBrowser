@@ -260,19 +260,28 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
 
   allowed_sc = []
   failed_sc = []
-  print "generate %d subtrees for target script" %(len(rs))
-  for index in range(len(rs)):
-    print str(rs)
-    seq = rs[index]
-    tree = TemplateTree(seq, None)
-    key = tree.key
 
+  if is_json:
+    tree = TemplateTree(rs, None)
     if simpleCompare(treedict, tree):
-      allowed_sc.append(sc[index])
+      allowed_sc.append(rs)
+      print "JSON allowed "
     else:
-      failed_sc.append(sc[index])
+      failed_sc.append(rs)
+      print "JSON failed "
+  else:
+    print "generate %d subtrees for target script" %(len(rs))
+    for index in range(len(rs)):
+      seq = rs[index]
+      tree = TemplateTree(seq, None)
+      key = tree.key
 
-  print "allowed %d blocks, failed %d blocks" %(len(allowed_sc), len(failed_sc))
+      if simpleCompare(treedict, tree):
+        allowed_sc.append(sc[index])
+      else:
+        failed_sc.append(sc[index])
+
+    print "allowed %d blocks, failed %d blocks" %(len(allowed_sc), len(failed_sc))
   return allowed_sc, failed_sc
 
 
