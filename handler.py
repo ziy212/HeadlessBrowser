@@ -213,6 +213,9 @@ class TemplateTree():
             if not self.object_types[str(i)][k].match(target_obj[k]):
               return False
       elif self.nodes[i].tag == 'Array':
+        if target_tree.nodes[i].value == None:
+          print "ARRAY NODE's VALUE is NULL"
+          continue
         target_obj = arrayToDict(target_tree.nodes[i].value)
         target_obj = extractObjectValues(target_obj)
         for k in target_obj:
