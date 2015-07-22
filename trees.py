@@ -262,6 +262,7 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
   failed_sc = []
   print "generate %d subtrees for target script" %(len(rs))
   for index in range(len(rs)):
+    print str(rs)
     seq = rs[index]
     tree = TemplateTree(seq, None)
     key = tree.key
