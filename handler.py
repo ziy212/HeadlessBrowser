@@ -195,20 +195,20 @@ class TemplateTree():
       if self.nodes[i].tag != target_tree.nodes[i].tag:
         return False
       if self.nodes[i].tag == 'String':
-        keys = [str(k) for k in self.string_types]
-        print type(self.string_types[i])
-        print 'string_type keys:',str(keys)
-        if not self.string_types[i].match(target_tree.nodes[i].value):
+        #keys = [str(k) for k in self.string_types]
+        #print type(self.string_types[i])
+        #print 'string_type keys:',str(keys)
+        if not self.string_types[str(i)].match(target_tree.nodes[i].value):
           return False
       elif self.nodes[i].tag == 'Object':
         target_obj = target_tree.nodes[i].value
         for k in target_obj:
           if isinstance(target_obj[k], list):
             for item in target_obj[k]:
-              if not self.object_types[i][k].match(item):
+              if not self.object_types[str(i)][k].match(item):
                 return False
           else:
-            if not self.object_types[i][k].match(target_obj[k]):
+            if not self.object_types[str(i)][k].match(target_obj[k]):
               return False
       elif self.nodes[i].tag == 'Array':
         target_obj = target_tree.nodes[i].value
