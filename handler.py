@@ -195,6 +195,8 @@ class TemplateTree():
       if self.nodes[i].tag != target_tree.nodes[i].tag:
         return False
       if self.nodes[i].tag == 'String':
+        keys = [str(k) for k in self.string_types]
+        print 'string_type keys:',str(keys)
         if not self.string_types[i].match(target_tree.nodes[i].value):
           return False
       elif self.nodes[i].tag == 'Object':
