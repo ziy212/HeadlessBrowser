@@ -98,7 +98,7 @@ class NodePattern():
 			tp = StringTypeDict[obj['type']]
 			self.tp = tp
 			if tp == StringType.CONST:
-				print "DEBUG: const value: ",b64decode(obj['val'])(obj['val'])
+				print "DEBUG: const value: ",str(b64decode(obj['val']))
 				self.val = b64decode(obj['val'])
 			elif tp == StringType.ENUM: 
 				elems = obj['val'].split(',')
