@@ -214,13 +214,39 @@ def compare(treedict, target_tree):
   pass
 
 def simpleCompare(treedict, target_tree):
-  pass
+  return target_tree.key and target_tree.key in treedict
 
-def matchTreesFromDomainWithScript(domain, script):
+def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
   treedict = getTreesForDomainFromDB(domain)
   if treedict == None or len(treedict) == 0:
     print "failed to fetch trees for domain ", domain
-    return
+    return None, None
+  passed_sc = []
+  failed_sc = []
+  f = open(url_list_path)
+  for line in f:
+    url = line.strip()
+    print "process url "+url
+    hosts, inlines = fetchScriptsFromDB(url)
+    if inlines==None or len(inlines) ==0:
+      print "no inlines for "+url
+      continue
+    for inline in inlines:
+      passed, failed = matchTreesFromDomainWithScript(domain, inline, treedict)
+      if passed == None:
+        print "failed for inline [S] ", inline[:100],' [E]'
+      else:
+        passed_sc += passed
+        failed_sc += failed
+  rate = float(len(passed_sc))/float(len(passed_sc)+len(failed_sc))
+  print "passed %d; failed: %d; rate:%f" %(len(passed_sc), len(failed_sc), rate)
+
+def matchTreesFromDomainWithScript(domain, script, treedict = None):
+  if treedict == None:
+    treedict = getTreesForDomainFromDB(domain)
+  if treedict == None or len(treedict) == 0:
+    print "failed to fetch trees for domain ", domain
+    return None, None
   print "fetched %d trees for domain" %(len(treedict))
   
   is_json = False
@@ -230,27 +256,30 @@ def matchTreesFromDomainWithScript(domain, script):
     is_json = True
   if rs == None:
     print "no script nor json"
-    return []
+    return [], []
 
   allowed_sc = []
+  failed_sc = []
   print "generate %d subtrees for target script" %(len(rs))
   for index in range(len(rs)):
     seq = rs[index]
     tree = TemplateTree(seq, None)
     key = tree.key
 
-    #comparison
-    if key in treedict:
+    if simpleCompare(treedict, tree):
       allowed_sc.append(sc[index])
+    else:
+      failed_sc.append(sc[index])
 
-  print "allowed %d blocks for target scripts" %(len(allowed_sc))
-  return allowed_sc
+  print "allowed %d blocks, failed %d blocks" %(len(allowed_sc), len(failed_sc))
+  return allowed_sc, failed_sc
 
 
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  #matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
+  matchTreesFromDomainWithScriptsFromURLListS2(sys.argv[1], sys.argv[2])
   #getTrees(sys.argv[1])
   #rs = matchTreesFromDomainWithScript(sys.argv[1], open(sys.argv[2]).read())
   #for item in rs:
