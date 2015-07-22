@@ -595,7 +595,6 @@ def getTreeSeq(nodes):
 def mergeTwoArrayDict(left, right):
   if right == None:
     return
-  print >>sys.stderr, "mergeTwoArrayDict: ",str(mergeTwoArrayDict)
   for k in right:
     if k in left:
       left[k] = left[k] + right[k]
@@ -672,8 +671,8 @@ def analyzeObjectResultHelper(script_list, index):
   return rs
 
 def arrayToDict(arr):
-  debug_id = str(uuid.uuid4())
-  print >> sys.stderr,"[START:%s] arrayToDict:%s" %(debug_id, (arr))
+  #debug_id = str(uuid.uuid4())
+  #print >> sys.stderr,"[START:%s] arrayToDict:%s" %(debug_id, (arr))
   rs = {}
   if arr == None:
     print "ERROR: arr is NULL in arrayToDict"
@@ -686,23 +685,23 @@ def arrayToDict(arr):
         else:
           rs['basestring_'].append(obj)
       elif isinstance(obj, list):
-        print >> sys.stderr, "DEBUG1 [%s] list %s" %(debug_id, str(obj))
+        #print >> sys.stderr, "DEBUG1 [%s] list %s" %(debug_id, str(obj))
         subarr = extractArrayValues(obj)
         subrs = arrayToDict(subarr)
         mergeTwoArrayDict(rs,subrs)
-        print >> sys.stderr, "DEBUG2 [%s] list %s" %(debug_id, str(obj))
+        #print >> sys.stderr, "DEBUG2 [%s] list %s" %(debug_id, str(obj))
       elif isinstance(obj, dict):
-        print >> sys.stderr, "DEBUG1 [%s] dict %s" %(debug_id, str(obj))
+        #print >> sys.stderr, "DEBUG1 [%s] dict %s" %(debug_id, str(obj))
         for k in obj:
           if not k in rs:
             rs[k] = [obj[k]]
           else:
             rs[k].append(obj[k])
-        print >> sys.stderr, "DEBUG2 [%s] dict %s" %(debug_id, str(obj))
+        #print >> sys.stderr, "DEBUG2 [%s] dict %s" %(debug_id, str(obj))
     
   except Exception as e:
     displayErrorMsg('arrayToDict',str(e)+' '+str(arr))
-  print >> sys.stderr,"[  END:%s] arrayToDict:%s" %(debug_id, (arr))
+  #print >> sys.stderr,"[  END:%s] arrayToDict:%s" %(debug_id, (arr))
 
 def analyzeArrayResultHelper(script_list, index):
   script_len = len(script_list)
