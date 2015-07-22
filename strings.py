@@ -35,7 +35,7 @@ class NodePattern():
 		return self.tp == StringType.INSUFFICIENT
 
 	def match(self, val_str):
-		if val_str == '':
+		if val_str.replace('"','').replace("'",'') == '':
 			print "[COMPARE] TARGET VAL is empty "
 			return True
 		if self.tp == StringType.INSUFFICIENT:

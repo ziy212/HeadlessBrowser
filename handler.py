@@ -613,6 +613,8 @@ def extractArrayValues(data):
 
 #{key : [string or number]}
 def extractObjectValues(data):
+  if data == None:
+    return {}
   rs = {} #key : [val1, val2]
   for k in data:
     if not k in rs:
