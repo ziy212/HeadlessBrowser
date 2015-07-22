@@ -141,15 +141,15 @@ class TemplateTree():
     if self.nodes != None:
       m = hashlib.md5()
       if self.type == "json":
-        keys = sorted(nodes.keys())
+        keys = sorted(self.nodes.keys())
         for k in keys:
           m.update(k)
       elif self.type == "js":
-        for node in nodes:
+        for node in self.nodes:
           m.update(node.tag)
       else:
         debug_msg = "TemplateTree nodes format error: %s %d %d" \
-          %(nodes[0].__class__, id(type(nodes[0])), id(ASTOutputNode))
+          %(self.nodes[0].__class__, id(type(self.nodes[0])), id(ASTOutputNode))
         displayErrorMsg('TemplateTree.calc_key', debug_msg)
         self.key = None
       key = m.hexdigest()
