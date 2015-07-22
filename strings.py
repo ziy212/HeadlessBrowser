@@ -26,6 +26,10 @@ StringTypeDict = {\
   'URI' : StringType.URI, \
   'OTHER' : StringType.OTHER}
 
+global_count = {'INSUFFICIENT': 0, \
+								'TARGET_VAL_NULL':0, \
+								'PASS':0,'FAIL':0}
+
 class NodePattern():
 	def __init__(self, tp=StringType.INSUFFICIENT, val=None):
 		self.tp = tp
@@ -37,37 +41,46 @@ class NodePattern():
 	def match(self, val_str):
 		if val_str.replace('"','').replace("'",'') == '':
 			print "[COMPARE] TARGET VAL is empty "
+			global_count['TARGET_VAL_NULL'] += 1
 			return True
 		if self.tp == StringType.INSUFFICIENT:
 			debug_str = "Length:[%d][%s] Vals:[%s]" %(len(self.val),str(self.val), str(self.val))
 			#print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
+			global_count['INSUFFICIENT'] += 1
 			return True
 		elif self.tp == StringType.CONST:
 			if self.tp != val_str:
 				print '[COMPARE] CONST error %s vs %s ' %(str(self.val), str(val_str))
+				global_count['FAIL'] += 1
 				return False
 		elif self.tp == StringType.ENUM:
 			if val_str not in self.val:
 				print "[COMPARE] ENUM error %s not in %s " %(str(val_str), str(self.val))
+				global_count['FAIL'] += 1
 				return False
 		elif self.tp == StringType.NUMBER:
 			if not stringIsNumeric(val_str):
 				print "[COMPARE] NUMBER error %s not a number " %(val_str)
+				global_count['FAIL'] += 1
 				return False
 		elif self.tp == StringType.QUOTED_NUMBER:
 			if not stringIsNumeric(val_str[1:-1]):
 				print "[COMPARE] QUOTED_NUMBER error %s not a quoted number " %(val_str)
+				global_count['FAIL'] += 1
 				return False
 		elif self.tp == StringType.URI:
 			d_set = getDomainsFromString(val_str)
 			if not d_set.issubset(self.val):
 				print "[COMPARE] URI error %s not a subset of %s " %(str(val_str), str(self.val) )
+				global_count['FAIL'] += 1
 				return False
 		elif self.tp == StringType.OTHER:
 			if not self.val.check(val_str):
 				print "[COMPARE] OTHER error %s not meeting rq of %s" \
 					%(val_str, self.val.dumps())
+				global_count['FAIL'] += 1
 				return False
+		global_count['PASS'] += 1
 		return True
 
 	def loads(self, data_str):

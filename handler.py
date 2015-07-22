@@ -691,7 +691,7 @@ def arrayToDict(arr):
           else:
             rs[k].append(obj[k])
   except Exception as e:
-    displayErrorMsg('arrayToDict',str(e))
+    displayErrorMsg('arrayToDict',str(e)+' '+str(arr))
     return {}
 
 def analyzeArrayResultHelper(script_list, index):

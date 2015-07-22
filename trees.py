@@ -5,6 +5,7 @@ from handler import isSubTree
 from handler import fetchScriptsFromDB
 from handler import extractArrayValues
 from handler import extractObjectValues
+from strings import global_count
 
 from ASTAnalyzer import analyzeJSCodes
 from ASTAnalyzer import analyzeJSCodesFinerBlock
@@ -243,6 +244,7 @@ def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
         failed_sc += failed
   rate = float(len(passed_sc))/float(len(passed_sc)+len(failed_sc))
   print "passed %d; failed: %d; rate:%f" %(len(passed_sc), len(failed_sc), rate)
+  print "match details : ", str(global_count)
 
 def matchTreesFromDomainWithScript(domain, script, treedict = None):
   if treedict == None:
