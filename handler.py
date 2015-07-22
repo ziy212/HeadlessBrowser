@@ -271,7 +271,7 @@ class TemplateTree():
         node_pattern = NodePattern()
         node_pattern.loads(self.string_types_str[key])
         self.string_types[key] = node_pattern
-      print "successfully loaded %d string patterns" %(len(self.string_types_str))
+      #print "successfully loaded %d string patterns" %(len(self.string_types_str))
 
       self.object_types_str = obj['object_types_str']
       for index in self.object_types_str:
@@ -281,7 +281,7 @@ class TemplateTree():
           node_pattern.loads(self.object_types_str[index][key])
           self.object_types[index][key] = node_pattern
             
-      print "successfully loaded %d object patterns" %(len(self.object_types_str))  
+      #print "successfully loaded %d object patterns" %(len(self.object_types_str))  
          
       self.array_types_str = obj['array_types_str']
       for index in self.array_types_str:
@@ -291,7 +291,7 @@ class TemplateTree():
           node_pattern.loads(self.array_types_str[index][key])
           self.array_types[index][key] = node_pattern
             
-      print "successfully loaded %d array patterns" %(len(self.array_types_str)) 
+      #print "successfully loaded %d array patterns" %(len(self.array_types_str)) 
 
       return True
     except Exception as e:
@@ -410,9 +410,9 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           print "STRING%d: [TYPE:%s] [VALUE:%s]" \
             %(i, tree.string_types_str[str(i)],','.join(encoded_val))
         if node.tag == "Object":
-          debug = "tag:%s val:%s" \
-            %(script_list[0][2].nodes[i].tag,str(script_list[0][2].nodes[i].value))
-          print "DEBUG: %s" %debug
+          #debug = "tag:%s val:%s" \
+          #  %(script_list[0][2].nodes[i].tag,str(script_list[0][2].nodes[i].value))
+          #print "DEBUG: %s" %debug
           rs = analyzeObjectResultHelper(script_list, i)
           rs = extractObjectValues(rs)
           type_dict = {}
