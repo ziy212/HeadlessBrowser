@@ -201,7 +201,8 @@ class TemplateTree():
         if not self.string_types[str(i)].match(target_tree.nodes[i].value):
           return False
       elif self.nodes[i].tag == 'Object':
-        target_obj = target_tree.nodes[i].value
+        #target_obj = 
+        target_obj = extractObjectValues(target_tree.nodes[i].value)
         print "DEBUG: ",str(target_obj)
         for k in target_obj:
           if isinstance(target_obj[k], list):
@@ -661,6 +662,29 @@ def analyzeObjectResultHelper(script_list, index):
         "error in analyzeObjectResultHelper "+str(e)
   return rs
 
+def arrayToDict(arr):
+  rs = {}
+  try:
+    for obj in arr:
+      if isinstance(obj, basestring):
+        if not "basestring_" in rs:
+          rs['basestring_'] = [obj]
+        else:
+          rs['basestring_'].append(obj)
+      elif isinstance(obj, list):
+        subarr = extractArrayValues(obj)
+        subrs = arrayToDict(subarr)
+        mergeTwoArrayDict(rs,subrs)
+      else:
+        for k in obj:
+          if not k in rs:
+            rs[k] = [obj[k]]
+          else:
+            rs[k].append(obj[k])
+  except Exception as e:
+    displayErrorMsg('arrayToDict',str(e))
+    return {}
+
 def analyzeArrayResultHelper(script_list, index):
   script_len = len(script_list)
   rs = {}
@@ -668,36 +692,8 @@ def analyzeArrayResultHelper(script_list, index):
     try:
       tree = script_list[i][2]
       arr = tree.nodes[index].value
-      for obj in arr:
-        #obj = arr[j]
-        if isinstance(obj, basestring):
-          if not "basestring_" in rs:
-            rs['basestring_'] = [obj]
-          else:
-            rs['basestring_'].append(obj)
-        elif isinstance(obj, list):
-          subarr = extractArrayValues(obj)
-          for item in subarr:
-            if isinstance(item, basestring):
-              if not "basestring_" in rs:
-                rs['basestring_'] = [item]
-              else:
-                rs['basestring_'].append(item)
-            elif isinstance(item, dict):
-              for k in item:
-                if not k in rs:
-                  rs[k] = [item[k]]
-                else:
-                  rs[k].append(item[k])
-            else:
-              print >> sys.stderr, \
-                "error in analyzeArrayResultHelper nested array ", str(arr)
-        else:
-          for k in obj:
-            if not k in rs:
-              rs[k] = [obj[k]]
-            else:
-              rs[k].append(obj[k])
+      subrs = arrayToDict(arr)
+      mergeTwoArrayDict(rs, subrs)
     except Exception as e:
       print >> sys.stderr, \
         "error in analyzeArrayResultHelper "+str(e)
