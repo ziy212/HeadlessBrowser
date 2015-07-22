@@ -190,48 +190,44 @@ class TemplateTree():
       return False
 
     length = len(target_tree.nodes)
-    #try:
     for i in range(length):
-      if self.nodes[i].tag != target_tree.nodes[i].tag:
-        return False
-      if self.nodes[i].tag == 'String':
-        #keys = [str(k) for k in self.string_types]
-        #print type(self.string_types[i])
-        #print 'string_type keys:',str(keys)
-        if not self.string_types[str(i)].match(target_tree.nodes[i].value):
+      try:
+        if self.nodes[i].tag != target_tree.nodes[i].tag:
           return False
-      elif self.nodes[i].tag == 'Object':
-        #target_obj = 
-        target_obj = extractObjectValues(target_tree.nodes[i].value)
-        #print "DEBUG: ",str(target_obj)
-        for k in target_obj:
-          if isinstance(target_obj[k], list):
-            for item in target_obj[k]:
-              if not self.object_types[str(i)][k].match(item):
-                return False
-          else:
-            if not self.object_types[str(i)][k].match(target_obj[k]):
+        if self.nodes[i].tag == 'String':
+          if not self.string_types[str(i)].match(target_tree.nodes[i].value):
+            return False
+        elif self.nodes[i].tag == 'Object':
+          target_obj = extractObjectValues(target_tree.nodes[i].value)
+          for k in target_obj:
+            if not k in self.object_types[str(i)]:
               return False
-      elif self.nodes[i].tag == 'Array':
-        if target_tree.nodes[i].value == None:
-          print "ARRAY NODE's VALUE is NULL"
-          continue
-        target_obj = arrayToDict(target_tree.nodes[i].value)
-        target_obj = extractObjectValues(target_obj)
-        for k in target_obj:
-          #print 'target: ',str(target_obj)
-          #print "k's class: ",k.__class__.__name__, ' target: ',target_obj.__class__.__name__
-          if isinstance(target_obj[k], list):
-            for item in target_obj[k]:
-              if not self.array_types[str(i)][k].match(item):
+            if isinstance(target_obj[k], list):
+              for item in target_obj[k]:
+                if not self.object_types[str(i)][k].match(item):
+                  return False
+            else:
+              if not self.object_types[str(i)][k].match(target_obj[k]):
                 return False
-          else:
-            if not self.array_types[str(i)][k].match(target_obj[k]):
+        elif self.nodes[i].tag == 'Array':
+          if target_tree.nodes[i].value == None:
+            continue
+          target_obj = arrayToDict(target_tree.nodes[i].value)
+          target_obj = extractObjectValues(target_obj)
+          for k in target_obj:
+            if not k in self.array_types[str(i)]:
               return False
+            if isinstance(target_obj[k], list):
+              for item in target_obj[k]:
+                if not self.array_types[str(i)][k].match(item):
+                  return False
+            else:
+              if not self.array_types[str(i)][k].match(target_obj[k]):
+                return False
+      except Exception as e:
+        displayErrorMsg('TemplateTree.match', str(e))
+        return False
     return True
-    #except Exception as e:
-    #  displayErrorMsg('TemplateTree.match','%s: %s' %(str(e), target_tree.nodes[i].tag))
-    #  return False
 
   def get_length(self):
     return len(self.nodes)
