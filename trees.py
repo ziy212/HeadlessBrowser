@@ -218,8 +218,8 @@ def main():
   matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #getTrees(sys.argv[1])
   #rs = matchTreesFromDomainWithScript(sys.argv[1], open(sys.argv[2]).read())
-  for item in rs:
-    print '[S] %s' % (item)
+  #for item in rs:
+  #  print '[S] %s' % (item)
 
 
 if __name__ == "__main__":
