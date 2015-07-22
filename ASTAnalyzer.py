@@ -70,7 +70,6 @@ class MyVisitor():
     #self.root = tree
     #self.subtrees = []
     #self.string_value_list = []
-
   
   def is_structure_class(self, node):
     name = node.__class__.__name__
@@ -231,8 +230,7 @@ class MyVisitor():
       tag = self.create_next_identifier()
       self.current_id_map[name] = tag
 
-    tag = name
-
+    tag = 'ID'+name
     output_node = ASTOutputNode(tag)
     output_node.value = node.value
     output_node.child_num = 0
@@ -380,6 +378,12 @@ def analyzeJSCodesFinerBlock(script, display=False):
     if len(visitor.first_level_seq) != len(visitor.scripts):
       print >>sys.stderr, "error parsing script: scripts and seqs length inconsistent "+script[:100]
       return None, None
+
+    #for seq in visitor.first_level_seq:
+    #  for node in seq:
+    #    if node.tag == "Object":
+    #      print "OBJECT TYPE: ",node.value.__class__.__name__
+
     return visitor.first_level_seq, visitor.scripts
   except Exception as e:
     print >>sys.stderr, "error parsing script: "+str(e)+" || [START]"+script[:100]+"[END]"

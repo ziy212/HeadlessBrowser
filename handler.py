@@ -56,7 +56,7 @@ def extractAndStoreScriptsFromDOM(url, dom):
       new_item = item.encode('utf-8')
       host_list.append(new_item)
     except Exception as e:
-      print "Exception in decoding: "+str(e)
+      print >> sys.stderr, "Exception in decoding: "+str(e)
       host_list.append(item)
 
   for item in contset:
@@ -64,9 +64,9 @@ def extractAndStoreScriptsFromDOM(url, dom):
       new_item = item.encode('utf-8')
       cont_list.append(new_item)
     except Exception as e:
-      print "Exception in decoding: "+str(e)
+      print >> sys.stderr, "Exception in decoding: "+str(e)
       cont_list.append(item)
-  print "extracted %d script hosts and %d inline scripts for %s " \
+  print >> sys.stderr, "extracted %d script hosts and %d inline scripts for %s " \
     %(len(host_list), len(cont_list), url)
 
   #for item in cont_list:
@@ -213,8 +213,8 @@ class TemplateTree():
       elif self.nodes[i].tag == 'Array':
         target_obj = target_tree.nodes[i].value
         for k in target_obj:
-          print 'target: ',str(target_obj)
-          print "k's class: ",k.__class__.__name__, ' target: ',target_obj.__class__.__name__
+          #print 'target: ',str(target_obj)
+          #print "k's class: ",k.__class__.__name__, ' target: ',target_obj.__class__.__name__
           if isinstance(target_obj[k], list):
             for item in target_obj[k]:
               if not self.array_types[str(i)][k].match(item):
@@ -410,6 +410,9 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           print "STRING%d: [TYPE:%s] [VALUE:%s]" \
             %(i, tree.string_types_str[str(i)],','.join(encoded_val))
         if node.tag == "Object":
+          debug = "tag:%s val:%s" \
+            %(script_list[0][2].nodes[i].tag,str(script_list[0][2].nodes[i].value))
+          print "DEBUG: %s" %debug
           rs = analyzeObjectResultHelper(script_list, i)
           rs = extractObjectValues(rs)
           type_dict = {}
@@ -645,14 +648,16 @@ def analyzeObjectResultHelper(script_list, index):
     try:
       tree = script_list[i][2]
       obj = tree.nodes[index].value
+      #print str(i)," analyzeObjectResultHelper obj: ", str(obj), obj.__class__.__name__
       for k in obj:
         val = obj[k]
         if not k in rs:
-          rs[k] = []
+          rs[k] = [val]
         else:
-          rs[k].append(obj[k])
+          rs[k].append(val)
     except Exception as e:
-      print "error in analyzeObjectResultHelper "+str(e)
+      print >> sys.stderr,\
+        "error in analyzeObjectResultHelper "+str(e)
   return rs
 
 def analyzeArrayResultHelper(script_list, index):
@@ -669,6 +674,23 @@ def analyzeArrayResultHelper(script_list, index):
             rs['basestring_'] = [obj]
           else:
             rs['basestring_'].append(obj)
+        elif isinstance(obj, list):
+          subarr = extractArrayValues(obj)
+          for item in subarr:
+            if isinstance(item, basestring):
+              if not "basestring_" in rs:
+                rs['basestring_'] = [item]
+              else:
+                rs['basestring_'].append(item)
+            elif isinstance(item, dict):
+              for k in item:
+                if not k in rs:
+                  rs[k] = [item[k]]
+                else:
+                  rs[k].append(item[k])
+            else:
+              print >> sys.stderr, \
+                "error in analyzeArrayResultHelper nested array ", str(arr)
         else:
           for k in obj:
             if not k in rs:
@@ -676,7 +698,8 @@ def analyzeArrayResultHelper(script_list, index):
             else:
               rs[k].append(obj[k])
     except Exception as e:
-      print "error in analyzeArrayResultHelper "+str(e)
+      print >> sys.stderr, \
+        "error in analyzeArrayResultHelper "+str(e)
   return rs
 
 def extractAndAnalyzeScriptsFromFile(path):
