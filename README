@@ -1,10 +1,12 @@
+Steps to run the service:
 1. start mongodb, create db: webcontents
-2. prepare.sh #install prerequsites
-3. nodemon db_server.js 
+2. prepare.sh               #install prerequsites, not a complete list
+3. nodemon db_server.js     #mongo db service
 4. python phantom_manager.py ./
-5. 
 
 
+
+Some commands:
 notes: ps aux | grep "python" | grep -v "grep"| awk '{print $2}'  | xargs kill -9
 scrapy runspider spider.py
 db.trees.createIndex({domain:1, key:1},{unique:true})

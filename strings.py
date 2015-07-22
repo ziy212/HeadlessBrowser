@@ -52,7 +52,7 @@ class NodePattern():
 				global_count['INSUFFICIENT'] += 1
 			return True
 		elif self.tp == StringType.CONST:
-			if self.tp != val_str:
+			if self.val != val_str:
 				print '[COMPARE] CONST error %s vs %s ' %(str(self.val), str(val_str))
 				global_count['FAIL'] += 1
 				return False
