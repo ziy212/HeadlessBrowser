@@ -47,7 +47,7 @@ class NodePattern():
 			if val_str not in self.val:
 				print "[COMPARE] ENUM error %s not in %s " %(str(val_str), str(self.val))
 				return False
-		elif self.tp == StringType.Number:
+		elif self.tp == StringType.NUMBER:
 			if not stringIsNumeric(val_str):
 				print "[COMPARE] NUMBER error %s not a number " %(val_str)
 				return False
