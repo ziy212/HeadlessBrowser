@@ -379,24 +379,6 @@ def analyzeStringListType(sample_list):
 		return NodePattern(StringType.INSUFFICIENT, sample_list)
 
 	size_of_sample = len(sample_list)
-	# Test CONST
-	sample_dict = {}
-	for item in sample_list:
-		item = item.lower().strip()
-		if not item in sample_dict:
-			sample_dict[item] = 1
-		else:
-			sample_dict[item] += 1
-
-	if len(sample_dict) == 1:
-		return NodePattern(StringType.CONST, sample_list[0])
-
-  # Test ENUM
-	percent = sorted(\
-  	[float(sample_dict[k])/float(len(sample_list)) \
-  		for k in sample_dict])
-	if percent[0] > ENUM_THRESHOLD and size_of_sample >= 10:
-		return NodePattern(StringType.ENUM, set(sample_dict.keys()))
 
 	# Test URI
 	unquoted_sample_list = [urllib.unquote_plus(x) for x in sample_list]
@@ -435,6 +417,25 @@ def analyzeStringListType(sample_list):
 			numeric_count += 1
 	if numeric_count == len(sample_list):
 		return NodePattern(StringType.QUOTED_NUMBER, '')
+
+	# Test CONST
+	sample_dict = {}
+	for item in sample_list:
+		item = item.lower().strip()
+		if not item in sample_dict:
+			sample_dict[item] = 1
+		else:
+			sample_dict[item] += 1
+
+	if len(sample_dict) == 1:
+		return NodePattern(StringType.CONST, sample_list[0])
+
+  # Test ENUM
+	percent = sorted(\
+  	[float(sample_dict[k])/float(len(sample_list)) \
+  		for k in sample_dict])
+	if percent[0] > ENUM_THRESHOLD and size_of_sample >= 10:
+		return NodePattern(StringType.ENUM, set(sample_dict.keys()))
 
 	# fixed_len, min_len, max_len
 	patt = Pattern(domain_set=domain_set)
