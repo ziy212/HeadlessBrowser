@@ -213,7 +213,8 @@ class TemplateTree():
             if not self.object_types[str(i)][k].match(target_obj[k]):
               return False
       elif self.nodes[i].tag == 'Array':
-        target_obj = target_tree.nodes[i].value
+        target_obj = arrayToDict(target_tree.nodes[i].value)
+        target_obj = extractObjectValues(target_obj)
         for k in target_obj:
           #print 'target: ',str(target_obj)
           #print "k's class: ",k.__class__.__name__, ' target: ',target_obj.__class__.__name__
