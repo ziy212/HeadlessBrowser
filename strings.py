@@ -44,9 +44,12 @@ class NodePattern():
 			global_count['TARGET_VAL_NULL'] += 1
 			return True
 		if self.tp == StringType.INSUFFICIENT:
-			debug_str = "Length:[%d][%s] Vals:[%s]" %(len(self.val),str(self.val), str(self.val))
-			#print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
-			global_count['INSUFFICIENT'] += 1
+			if val_str in self.val:
+				print "[COMPARE] MATCH INSUFFICIENT"
+			else:
+				debug_str = "Length:[%d][%s] Vals:[%s]" %(len(self.val),str(self.val), str(self.val))
+				#print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
+				global_count['INSUFFICIENT'] += 1
 			return True
 		elif self.tp == StringType.CONST:
 			if self.tp != val_str:
@@ -98,7 +101,6 @@ class NodePattern():
 			tp = StringTypeDict[obj['type']]
 			self.tp = tp
 			if tp == StringType.CONST:
-				print "DEBUG: const value: ",str(b64decode(obj['val']))
 				self.val = b64decode(obj['val'])
 			elif tp == StringType.ENUM: 
 				elems = obj['val'].split(',')
@@ -387,7 +389,7 @@ def analyzeStringListType(sample_list):
 			sample_dict[item] += 1
 
 	if len(sample_dict) == 1:
-		return NodePattern(StringType.CONST, sample_dict.values()[0])
+		return NodePattern(StringType.CONST, sample_list[0])
 
   # Test ENUM
 	percent = sorted(\
