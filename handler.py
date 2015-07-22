@@ -670,6 +670,9 @@ def analyzeObjectResultHelper(script_list, index):
 
 def arrayToDict(arr):
   rs = {}
+  if arr == None:
+    print "ERROR: arr is NULL in arrayToDict"
+    return rs
   try:
     for obj in arr:
       if isinstance(obj, basestring):
@@ -681,7 +684,7 @@ def arrayToDict(arr):
         subarr = extractArrayValues(obj)
         subrs = arrayToDict(subarr)
         mergeTwoArrayDict(rs,subrs)
-      else:
+      elif isinstance(obj, dict):
         for k in obj:
           if not k in rs:
             rs[k] = [obj[k]]
