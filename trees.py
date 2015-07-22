@@ -211,7 +211,10 @@ def completeMatchTreesFromDomainWithScriptsFromURLList(domain, url_list_path):
     %(match_uniq_script,match_script, nonmatch_uniq_script, nonmatch_script, nonmatch_tree)
 
 def compare(treedict, target_tree):
-  pass
+  key = target_tree.key
+  if key in treedict:
+    tree = treedict[key]
+    return tree.match(target_tree)
 
 def simpleCompare(treedict, target_tree):
   return target_tree.key and target_tree.key in treedict
@@ -247,7 +250,7 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
   if treedict == None or len(treedict) == 0:
     print "failed to fetch trees for domain ", domain
     return None, None
-  print "fetched %d trees for domain" %(len(treedict))
+  #print "fetched %d trees for domain" %(len(treedict))
   
   is_json = False
   rs, sc = analyzeJSCodesFinerBlock(script)
@@ -263,7 +266,8 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
 
   if is_json:
     tree = TemplateTree(rs, None)
-    if simpleCompare(treedict, tree):
+    #if simpleCompare(treedict, tree):
+    if compare(treedict, tree):
       allowed_sc.append(rs)
       print "JSON allowed "
     else:
@@ -276,7 +280,8 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
       tree = TemplateTree(seq, None)
       key = tree.key
 
-      if simpleCompare(treedict, tree):
+      #if simpleCompare(treedict, tree):
+      if compare(treedict, tree):
         allowed_sc.append(sc[index])
       else:
         failed_sc.append(sc[index])
