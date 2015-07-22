@@ -215,10 +215,10 @@ class TemplateTree():
         for k in target_obj:
           if isinstance(target_obj[k], list):
             for item in target_obj[k]:
-              if not self.array_types[i][k].match(item):
+              if not self.array_types[str(i)][k].match(item):
                 return False
           else:
-            if not self.array_types[i][k].match(target_obj[k]):
+            if not self.array_types[str(i)][k].match(target_obj[k]):
               return False
     return True
     #except Exception as e:
