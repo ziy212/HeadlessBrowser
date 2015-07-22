@@ -593,6 +593,9 @@ def getTreeSeq(nodes):
 
 #key : [val1, val2]
 def mergeTwoArrayDict(left, right):
+  if right == None:
+    return
+  print >>sys.stderr, "mergeTwoArrayDict: ",str(mergeTwoArrayDict)
   for k in right:
     if k in left:
       left[k] = left[k] + right[k]
