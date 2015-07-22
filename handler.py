@@ -165,6 +165,8 @@ class TemplateTree():
       val = ""
       for i in range(len(self.nodes)):
         item = self.nodes[i]
+        if item.value == None:
+          item.value = 'None'
         if item.tag == 'String':
           v = ' ['+item.value+']'
         elif item.tag == 'Array' or item.tag =='Object':
