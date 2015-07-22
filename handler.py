@@ -669,6 +669,7 @@ def analyzeObjectResultHelper(script_list, index):
   return rs
 
 def arrayToDict(arr):
+  print "[START] arrayToDict:",str(arr)
   rs = {}
   if arr == None:
     print "ERROR: arr is NULL in arrayToDict"
@@ -690,9 +691,10 @@ def arrayToDict(arr):
             rs[k] = [obj[k]]
           else:
             rs[k].append(obj[k])
+    
   except Exception as e:
     displayErrorMsg('arrayToDict',str(e)+' '+str(arr))
-    return {}
+  print "[END] arrayToDict:",str(arr),' TO ',str(rs)
 
 def analyzeArrayResultHelper(script_list, index):
   script_len = len(script_list)
