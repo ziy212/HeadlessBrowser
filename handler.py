@@ -669,7 +669,7 @@ def analyzeObjectResultHelper(script_list, index):
   return rs
 
 def arrayToDict(arr):
-  print "[START] arrayToDict:",str(arr)
+  print >> sys.stderr,"[START] arrayToDict:",str(arr)
   rs = {}
   if arr == None:
     print "ERROR: arr is NULL in arrayToDict"
@@ -682,9 +682,11 @@ def arrayToDict(arr):
         else:
           rs['basestring_'].append(obj)
       elif isinstance(obj, list):
+        print >> sys.stderr, "DEBUG1 ",str(obj)
         subarr = extractArrayValues(obj)
         subrs = arrayToDict(subarr)
         mergeTwoArrayDict(rs,subrs)
+        print >> sys.stderr, "DEBUG2 ",str(obj)
       elif isinstance(obj, dict):
         for k in obj:
           if not k in rs:
@@ -694,7 +696,7 @@ def arrayToDict(arr):
     
   except Exception as e:
     displayErrorMsg('arrayToDict',str(e)+' '+str(arr))
-  print "[END] arrayToDict:",str(arr),' TO ',str(rs)
+  print >> sys.stderr, "[END] arrayToDict:",str(arr),' TO ',str(rs)
 
 def analyzeArrayResultHelper(script_list, index):
   script_len = len(script_list)
