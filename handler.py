@@ -134,20 +134,27 @@ class TemplateTree():
       return
 
     if key == None:
-      if nodes != None:
-        m = hashlib.md5()
-        if self.type == "json":
-          keys = sorted(nodes.keys())
-          for k in keys:
-            m.update(k)
-        elif self.type == "js":
-          for node in nodes:
-            m.update(node.tag)
-        else:
-          print "TemplateTree nodes format error: %s %d %d" \
-            %(nodes[0].__class__, id(type(nodes[0])), id(ASTOutputNode))
-          return
-        key = m.hexdigest()
+      self.calc_key()
+
+  def calc_key(self):
+    if self.nodes != None:
+      m = hashlib.md5()
+      if self.type == "json":
+        keys = sorted(nodes.keys())
+        for k in keys:
+          m.update(k)
+      elif self.type == "js":
+        for node in nodes:
+          m.update(node.tag)
+      else:
+        debug_msg = "TemplateTree nodes format error: %s %d %d" \
+          %(nodes[0].__class__, id(type(nodes[0])), id(ASTOutputNode))
+        displayErrorMsg('TemplateTree.calc_key', debug_msg)
+        self.key = None
+      key = m.hexdigest()
+    else:
+      displayErrorMsg('TemplateTree.calc_key', "Nodes are None")
+      self.key = None
     self.key = key
 
   def debug(self):
@@ -224,6 +231,8 @@ class TemplateTree():
       elif self.type == 'js':
         nodes = obj['tree'].split(',')
         self.nodes = [ASTOutputNode(b64decode(x)) for x in nodes]
+      self.calc_key()
+      
       self.string_types_str = obj['string_types_str']
       for key in self.string_types_str:
         self.string_types[key] = strings.loadStringTypeAndData(self.string_types_str[key])
