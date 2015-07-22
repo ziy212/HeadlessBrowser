@@ -391,7 +391,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           #fw.write(item+"\n")
           tree.strings[i] = vals
           node_pattern = analyzeStringListType(vals)
-          tree.string_types_str[i] = node_pattern.dumps()
+          tree.string_types_str[str(i)] = node_pattern.dumps()
           if node_pattern.is_insufficient():
             if not key in insufficient_urls:
               insufficient_urls[key] = \
@@ -406,7 +406,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
           #else:
           #  print "successfully loaded tree: "+tree.string_types_str[i]
           print "STRING%d: [TYPE:%s] [VALUE:%s]" \
-            %(i, tree.string_types_str[i],','.join(encoded_val))
+            %(i, tree.string_types_str[str(i)],','.join(encoded_val))
         if node.tag == "Object":
           rs = analyzeObjectResultHelper(script_list, i)
           rs = extractObjectValues(rs)
@@ -431,7 +431,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
             print "OBJECT%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
               %(i, type_dict[k], k, ','.join(encoded_val))
           tree.objects[i] = rs
-          tree.object_types_str[i] = type_dict
+          tree.object_types_str[str(i)] = type_dict
         if node.tag == "Array":
           rs = analyzeArrayResultHelper(script_list, i)
           rs = extractObjectValues(rs)
@@ -457,7 +457,7 @@ def fetchAndProcessScriptsOfURLsFromFile(path,dst_path):
             print "ARRAY%d: [TYPE:%s] [KEY:%s][VALUE:%s]" \
               %(i, type_dict[k], k, ','.join(encoded_val))
           tree.arrays[i] = rs
-          tree.array_types_str[i] = type_dict
+          tree.array_types_str[str(i)] = type_dict
       except Exception as e:
         displayErrorMsg("fetchAndProcessScriptsOfURLsFromFile",\
            "excpetion in analyzing node %d %s " %(i, str(e))) 
