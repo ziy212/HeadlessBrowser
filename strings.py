@@ -40,7 +40,7 @@ class NodePattern():
 			return True
 		if self.tp == StringType.INSUFFICIENT:
 			debug_str = "Length:[%d][%s] Vals:[%s]" %(len(self.val),str(self.val), str(self.val))
-			print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
+			#print "[COMPARE] INSUFFICIENT is insufficient: %s" %debug_str
 			return True
 		elif self.tp == StringType.CONST:
 			if self.tp != val_str:
