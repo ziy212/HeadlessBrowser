@@ -4,6 +4,8 @@ from db_client import fetchTrees
 from db_client import fetchScripts
 from db_client import fetchURLContents
 from db_client import findAverageContents
+from script_analyzer import analyzeJSCodesFinerBlock
+from script_analyzer import analyzeJSON
 from html_parser import traverseDOMTree
 from html_parser import getLDPairRepr
 from template import getTreesForDomainFromDB
