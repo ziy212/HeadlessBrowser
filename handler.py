@@ -22,7 +22,7 @@ def compare(treedict, target_tree):
 def simpleCompare(treedict, target_tree):
   return target_tree.key and target_tree.key in treedict
 
-def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
+def matchScriptsFromURLFileWithDomainTemplate(domain, url_list_path):
   treedict = getTreesForDomainFromDB(domain)
   if treedict == None or len(treedict) == 0:
     print "failed to fetch trees for domain ", domain
@@ -38,7 +38,7 @@ def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
       print "no inlines for "+url
       continue
     for inline in inlines:
-      passed, failed = matchTreesFromDomainWithScript(domain, inline, treedict)
+      passed, failed = matchScriptWithDomainTemplate(domain, inline, treedict)
       if passed == None:
         print "failed for inline [S] ", inline[:100],' [E]'
       else:
@@ -48,7 +48,7 @@ def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
   print "passed %d; failed: %d; rate:%f" %(len(passed_sc), len(failed_sc), rate)
   print "match details : ", str(global_count)
 
-def matchTreesFromDomainWithScript(domain, script, treedict = None):
+def matchScriptWithDomainTemplate(domain, script, treedict = None):
   if treedict == None:
     treedict = getTreesForDomainFromDB(domain)
   if treedict == None or len(treedict) == 0:
@@ -273,7 +273,7 @@ def calcTwoHTMLDistance(contents1, contents2):
 
 def main():
   #fetchAndProcessScriptsOfURLsFromFile(sys.argv[1],sys.argv[2])
-  matchTreesFromDomainWithScriptsFromURLListS2(sys.argv[1], sys.argv[2])
+  matchScriptsFromURLFileWithDomainTemplate(sys.argv[1], sys.argv[2])
 
 if __name__ == "__main__":
   main()
