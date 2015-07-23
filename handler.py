@@ -10,6 +10,7 @@ from html_parser import traverseDOMTree
 from html_parser import getLDPairRepr
 from template import getTreesForDomainFromDB
 from template import TemplateTree
+from template import global_count
 from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
