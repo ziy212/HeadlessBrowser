@@ -1,8 +1,11 @@
 Steps to run the service:
 1. start mongodb, create db: webcontents
 2. prepare.sh               #install prerequsites, not a complete list
-3. nodemon db_server.js     #mongo db service
-4. python phantom_manager.py ./
+3. nodemon db_server.js     #mongo db service (port 4040)
+4. python phantom_manager.py log_dir phanton_worker.js_path # this manager starts a server (port 8082) to receive web contents crawl/execution tasks
+
+
+Steps to train a website:
 
 
 

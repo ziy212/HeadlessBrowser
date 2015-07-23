@@ -6,6 +6,7 @@ from db_client import fetchURLContents
 from db_client import findAverageContents
 from html_parser import traverseDOMTree
 from html_parser import getLDPairRepr
+from template import getTreesForDomainFromDB
 from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
@@ -32,7 +33,7 @@ def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
   for line in f:
     url = line.strip()
     print "process url "+url
-    hosts, inlines = fetchScriptsFromDB(url)
+    hosts, inlines = fetchScripts(url)
     if inlines==None or len(inlines) ==0:
       print "no inlines for "+url
       continue
@@ -271,7 +272,8 @@ def calcTwoHTMLDistance(contents1, contents2):
 ######################END######################################
 
 def main():
-  fetchAndProcessScriptsOfURLsFromFile(sys.argv[1],sys.argv[2])
+  #fetchAndProcessScriptsOfURLsFromFile(sys.argv[1],sys.argv[2])
+  matchTreesFromDomainWithScriptsFromURLListS2(sys.argv[1], sys.argv[2])
 
 if __name__ == "__main__":
   main()
