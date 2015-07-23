@@ -5,11 +5,10 @@ import sys
 import base64
 import os
 import urlparse
-from html_parser import calcTwoHTMLDistance
-from strings import getEffectiveDomainFromURL
 import logging
 import math
 import traceback
+import tldextract
 
 logger = logging.getLogger('DOMCluster')
 hdlr = logging.FileHandler('./cluster.log')
@@ -249,6 +248,7 @@ def fetchTrees(domain):
         print "fetching tree exception: ",str(e)
         return None
 
+
 def findAverageContents(arr):
     if arr==None or len(arr)==0:
         return None
@@ -279,39 +279,13 @@ def findAverageContents(arr):
         if len(item) == len_val:
             return item
 
-def findContentsFromURLList(urllist):
-    list_len = len(urllist)
-    for i in range(list_len):
-        for j in range(i+1, list_len):
-            #print "1 %d %d" %(i,j)
-            url1 = urllist[i]
-            url2 = urllist[j]
-            #print "2 %d %d" %(i,j)
-            if url1 == url2:
-                continue
-            rs = fetchDistance(url1, url2)
-            if rs == None or len(rs) == 0:
-                #print "3 %d %d" %(i,j)
-                contents1 = fetchURLContents(url1)
-                contents2 = fetchURLContents(url2)
-                c1 = findAverageContents(contents1)
-                c2 = findAverageContents(contents2)
-                if c1 == None :
-                    logger.debug("[alert] [%s] has no contents" %url1 )
-                    continue
-                if c2 == None :
-                    logger.debug("[alert] [%s] has no contents" %url2 )
-                    continue  
-                #print "4 %d %d" %(i,j)
-                distance = calcTwoHTMLDistance(c1, c2)
-                #print "5 %d %d" %(i,j)
-                r = storeDistance(url1, url2, distance)
-                logger.debug("calculate distance [%s][%s]: %f %s" %(\
-                    url1, url2, distance, r) )
-            else:
-                #print "6 %d %d %s" %(i,j,str(rs))
-                logger.debug("find distance [%s][%s]: %f " %(\
-                    url1, url2, rs[0]) )
+def getEffectiveDomainFromURL(url):
+  try:
+    o = tldextract.extract(url.lower())
+    return o.domain + '.' + o.suffix
+  except Exception as e:
+    print >> sys.stderr, "error in getting getEffectiveDomain ", str(e)
+    return None
 
 def main():
     '''

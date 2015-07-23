@@ -8,6 +8,12 @@ MIN_SAMPLE_SIZE = 5
 ENUM_THRESHOLD = 0.3
 PATTERN_MIN_PREFIX = 3
 
+'''
+	Exports:
+		1. NodePattern generateNodePattern(sample_list)
+		2. class NodePattern
+'''
+
 class StringType(Enum):
   CONST = "CONST"
   ENUM = "ENUM"
@@ -271,109 +277,10 @@ class Pattern():
 	def __str__(self):
 		return self.dumps()
 
-def loadStringTypeAndData(data):
-	try:
-		obj = json.loads(data)
-	except Exception as e:
-		print >>sys.stderr, "error in loadStringTypeAndData ",str(e),str(data)
-		return None
-
-	if obj == None or obj['type'] == "ERROR":
-		print 'loadStringTypeAndData none: %s' %str(obj)
-		return None
-
-	try:
-		tp = StringTypeDict[obj['type']]
-		obj['type'] = tp
-		if tp == StringType.CONST:
-			obj['val'] = b64decode(obj['val'])
-		elif tp == StringType.ENUM: 
-			elems = obj['val'].split(',')
-			decoded_vals = [b64decode(x) for x in elems]
-			obj['val'] = set(decoded_vals)
-		elif tp == StringType.INSUFFICIENT: 
-			elems = obj['val'].split(',')
-			decoded_vals = [b64decode(x) for x in elems]
-			obj['val'] = decoded_vals
-		elif tp == StringType.NUMBER:
-			obj['val'] = ""
-		elif tp == StringType.QUOTED_NUMBER:
-			obj['val'] = ""
-		elif tp == StringType.URI:
-			elems = obj['val'].split(',')
-			decoded_vals = [b64decode(x) for x in elems]
-			obj['val'] = set(decoded_vals)
-		elif tp == StringType.OTHER:
-			val = b64decode(obj['val'])
-			#print >>sys.stderr, "[DEBUG], OTHER VAL ",val
-			val_obj = json.loads(val)
-			patt = Pattern()
-			patt.loads(val_obj)
-			obj['val'] = patt
-		return obj
-	except Exception as e:
-		print >>sys.stderr, "error in loadStringTypeAndData 2 ",str(e),str(data)
-		return None
-
-def dumpStringTypeAndData(tp, data):
-	obj = {'type':'ERROR'}
-	# INSUFFICIENT:
-	# data is the sample list
-	# return {'type':'INSUFFICIENT', 'val': "decoded_sample1, decoded_sample2"}
-
-	# CONST:
-	# data is the const value
-	# return {'type':'CONST', 'val':single_value}
-	
-	# ENUM:
-	# data is the `set` of enum value
-	# return {'type':'ENUM', 'val':"decoded_val1,decoded_val2"}
-	
-	# NUMBER/QUOTED_NUMBER:
-	# data is ""
-	# return {'type':'NUMBER', 'val':''} 
-	
-	# URI:
-	# data is the `set` of domain value
-	# return {'type':'URI', 'val':"decoded_domain1,decoded_domain2"}
-
-	# OTHER:
-	# data is Pattern object
-	# return {'type':'OTHER', 'val':"decoded_pattern_string"}
-	if tp == StringType.INSUFFICIENT:
-		obj['type'] = "INSUFFICIENT"
-		obj['val'] = [b64encode(x) for x in data]
-	elif tp == StringType.CONST:
-		obj['type'] = "CONST"
-		obj['val'] = b64encode(str(data))
-	elif tp == StringType.ENUM: 
-		encoded_vals = [b64encode(x) for x in data]
-		val = ','.join(encoded_vals)
-		obj['type'] = "ENUM"
-		obj['val'] = val
-	elif tp == StringType.NUMBER:
-		obj['type'] = "NUMBER"
-		obj['val'] = ''
-	elif tp == StringType.QUOTED_NUMBER:
-		obj['type'] = "QUOTED_NUMBER"
-		obj['val'] = ''
-	elif tp == StringType.URI:
-		encoded_vals = [b64encode(x) for x in data]
-		val = ','.join(encoded_vals)
-		obj['type'] = "URI"
-		obj['val'] = val
-	elif tp == StringType.OTHER:
-		obj['type'] = "OTHER"
-		obj['val'] = b64encode(data.dumps())
-
-	return json.dumps(obj)
-#===================================
-
 '''
 	Functions used for analyzing samples
 '''
-#return (type, value, size_of_sample)
-def analyzeStringListType(sample_list):
+def generateNodePattern(sample_list):
 	if len(sample_list) < MIN_SAMPLE_SIZE:
 		print >>sys.stderr, "error: sample size too small: %d " %len(sample_list)
 		return NodePattern(StringType.INSUFFICIENT, sample_list)
@@ -466,6 +373,9 @@ def analyzeStringListType(sample_list):
 
 	return NodePattern(StringType.OTHER, patt)
 
+'''
+	Utilitity functions
+'''
 def getEffectiveDomainFromURL(url):
   try:
     o = tldextract.extract(url.lower())
@@ -520,7 +430,7 @@ def getSpecialCharacters(string):
 		return set()
 	char_set = set(rs)
 	return char_set
-#============Helper methods========================
+
 
 #analyzeStringListType(['YES','YES','NO','NO','NO','YES','NO','NO','NO','YES','NO']) 
 

@@ -1,7 +1,10 @@
-import sys, re,  distance,  editdistance, json
+import sys, re, json
 from urlparse import urlparse
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
+from string_comparison import longest_common_substring
+from string_comparison import similar_strings
+from string_comparison import compare_two_string
 
 SCRIPT_COST = 20
 
@@ -91,7 +94,6 @@ class Node:
 		self_data = "%s-%s" % (self.cls, self.val)
 		other_data = "%s-%s" % (other.cls,other.val)
 		return self_data == other_data
-
 
 def traverseDOMTree(root, parent_node, level):
 	if isinstance(root, NavigableString):
@@ -325,170 +327,6 @@ def getLDPairRepr(root):
 	script_contents = set()
 	getLDPairReprHelper(root, result, script_hosts, script_contents)
 	return result, script_hosts, script_contents
-
-def calcTwoHTMLDistanceFromFiles(dom_path1, dom_path2):	
-	contents1 = open(dom_path1).read()
-	contents2 = open(dom_path2).read()
-	calcTwoHTMLDistance(contents1,contents2)
-
-
-def calcTwoHTMLDistance(contents1, contents2):
-	try:
-		soup1 = BeautifulSoup(contents1, "html5lib")
-	except Exception as e:
-		print "Error parsing DOM using html5 ",str(e)
-		soup1 = BeautifulSoup(contents1.decode('utf-8'), "html5lib")
-	
-	try:
-		soup2 = BeautifulSoup(contents2, "html5lib")
-	except Exception as e:
-		print "Error parsing DOM using html5 ", str(e)
-		soup2 = BeautifulSoup(contents2.decode('utf-8'), "html5lib")
-
-	node1 = Node("doc")
-	node2 = Node("doc")
-	traverseDOMTree(soup1.html,node1, 0)
-	traverseDOMTree(soup2.html,node2, 0)
-	ld1, ld1_script_hosts, ld1_script_contents = getLDPairRepr(node1)
-	ld2, ld2_script_hosts, ld2_script_contents = getLDPairRepr(node2)
-	print "script length for ld1: %d %d " % (len(ld1_script_hosts),len(ld1_script_contents))
-	print "script length for ld2: %d %d " % (len(ld2_script_hosts),len(ld2_script_contents))
-	D = mmdiff(ld1, ld2)
-	return mmdiffR(ld1, ld2, D, \
-		ld1_script_hosts,ld1_script_contents, ld2_script_hosts, ld2_script_contents)
-
-###################EXTRACTION SCRIPT##########################
-
-def extractionHelper(root, result, script_hosts, script_contents):
-	#result.append(root)
-	if root.tag == "script":
-		if root.src != "None":
-			script_hosts.add(root.src)
-		elif root.val != "":
-			script_contents.add(root.val)
-			#if 'json' in root.tp:
-			#	try:
-			#		json.loads(root.val)
-			#		script_contents.add((root.val,"json"))
-			#	except Exception as e:
-			#		script_contents.add((root.val,"script"))
-			#else:
-			#	script_contents.add((root.val,"script"))
-
-	for child in root.children:
-		extractionHelper(child, result, script_hosts, script_contents)
-
-def extractScriptFromDOMTree(root):
-	result = [None]
-	script_hosts = set()
-	script_contents = set()
-	extractionHelper(root, result, script_hosts, script_contents)
-	return script_hosts, script_contents
-
-def extractScriptFromContents(contents):
-	if contents == None or len(contents)==0:
-		return None, None
-	try:
-		soup = BeautifulSoup(contents, "html5lib")
-	except Exception as e:
-		print "Error parsing DOM using html5 ",str(e)
-		soup = BeautifulSoup(contents.decode('utf-8'), "html5lib")
-	node = Node("doc")
-	traverseDOMTree(soup.html,node, 0)
-	script_hosts, script_contents = extractScriptFromDOMTree(node)
-	
-	#for host in script_hosts:
-	#	print "host: %s" %host
-	#for content in script_contents:
-	#	print "content: %s" %content
-	#print "summary Host:%d Contents:%d" %(len(script_hosts), len(script_contents))
-
-	return script_hosts, script_contents
-
-#################STRING##########################
-
-def longest_common_substring(s1, s2):
-	print "longest_common_substring"
-	m = [[0] * (1 + len(s2)) for i in xrange(1 + len(s1))]
-	longest, x_longest = 0, 0
-	for x in xrange(1, 1 + len(s1)):
-		for y in xrange(1, 1 + len(s2)):
-			if s1[x - 1] == s2[y - 1]:
-				m[x][y] = m[x - 1][y - 1] + 1
-				if m[x][y] > longest:
-					longest = m[x][y]
-					x_longest = x
-			else:
-				m[x][y] = 0
-	return s1[x_longest - longest: x_longest]
-
-def similar_strings(s1, s2, threthold):
-	new_s1 = s1
-	new_s2 = s2
-	if len(s1) < len(s2):
-		new_s1 = s1 + ' '.ljust(len(s2) - len(s1))
-		new_s2 = s2
-	elif len(s1) > len(s2):
-		new_s2 = s2 + ' '.ljust(len(s1) - len(s2))
-		new_s1 = s1
-	length = len(new_s1)
-	hamming = distance.hamming(new_s1,new_s2,normalized=True)
-	#print "hamming %f, threthold: %f" %(hamming, threthold)
-	if hamming < 1 - threthold:
-		return True
-
-	#print "c1alculating levenshtein ...length: %d vs %d " %(len(s1), len(s2))
-	
-	integer_threthold = 0
-	if min(len(s1), len(s2)) > 15000:
-		s1_arr = re.split('[;,]',s1)
-		s2_arr = re.split('[;,]',s2)
-		#print "using fast levenshtein algorithm: s1-len:%d s2-len:%d" \
-		#	%(len(s1_arr), len(s2_arr))
-		levenshtein = editdistance.eval(s1_arr, s2_arr)
-		integer_threthold = min(len(s1_arr), len(s2_arr)) * (1 - threthold)
-	else:
-		#print "using standard levenshtein algorithm"
-		levenshtein = editdistance.eval(s1, s2)
-		integer_threthold = min(len(s1), len(s2)) * (1 - threthold)
-	#print "result levenshtein %d vs threthold %d " %(levenshtein,integer_threthold)
-	if levenshtein <= integer_threthold:
-		return True
-	else:
-		return False
-
-	return False
-
-def compare_two_string(str1, str2, threthold=0.8):
-	if str1 == str2:
-		return True
-	whilespace = re.compile(r"\s+", re.MULTILINE)
-	str1 = whilespace.sub('', str1.lower())
-	str2 = whilespace.sub('', str2.lower())
-	if str1 == str2:
-		return True
-
-	if len(str1) == 0 or len(str2) == 0:
-		return False
-
-	# Contain
-	if str1 in str2 or str2 in str1:
-		print "[INCLUDE: %s IN %s]" % (str1, str2)
-		return True
-	
-	# Short string comparison
-	if len(str1) <= 50 and len(str2) <= 50:
-		return str1 == str2
-	
-	# Length difference larger than a threthold
-	if abs(len(str1) - len(str2)) > max(len(str1), len(str2)) * 0.3 :
-		#print "diff:%d threthold:%f" %(abs(len(str1) - len(str2)), max(len(str1), len(str2)) * 0.1)
-		return False
-
-	# Longest string
-	return similar_strings(str1, str2, threthold)
-
-##################################################
 
 def main():
 	#calcTwoHTMLDistanceFromFiles(sys.argv[1], sys.argv[2])

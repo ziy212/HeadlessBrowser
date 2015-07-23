@@ -1,32 +1,16 @@
 from slimit.parser import Parser
 from slimit.visitors import nodevisitor
 from slimit import ast
+from db_client import fetchScripts
+from utilities import deprecated
 import itertools, sys, json, copy, hashlib, os
 
-############TESING CODE##############
-def nodeToString(node):
-  try:
-    v = str(node)
-    tmp = v.split()
-    tmp = tmp[0].split('.')
-    return tmp[-1].strip()
-  except Exception as e:
-    return str(node)
-
-def visitTree(node, level):
-  space = ' '.ljust(level*2)
-  print "%s%s" %(space, node.__class__.__name__)
-  for child in node:
-    visitTree(child,level+1)  
-
-def getASTClasses(path):
-  f = open(path)
-  s = set()
-  for c in f:
-    s.add(c.strip())
-  return s
-
-####################################
+'''
+  Exports:
+    1. class ASTOutputNode
+    2. [ast_node_list], [script_souce] = analyzeJSCodesFinerBlock(script)
+    3. json_obj = analyzeJSON(json_string)
+'''
 
 class ASTOutputNode():
   def __init__(self, tag):
@@ -41,10 +25,6 @@ class ASTOutputNode():
 
   def __ne__(self, other):
     return not self.__eq__(other)
-
-
-
-####################SCRIPT VISITOR##############
 
 class MyVisitor():
   def __init__(self, display=True):
@@ -196,13 +176,6 @@ class MyVisitor():
       self.identifier_map.append(self.current_id_map)
       self.first_level_seq.append(self.node_order_list[index:])
       self.scripts.append(node.to_ecma())
-    #print "display array: %d" %len(v)
-    #for item in v:
-    #  print item
-    #print "done displaying array"
-
-    #if self.display:
-    #  print "%s%d]" %(space, output_node.child_num)
     return output_node
     
   def visit_String(self, node, level):
@@ -271,18 +244,13 @@ class MyVisitor():
     return rs
 
   def visit_VarStatement(self, node, level):
-    #child_num = 0
     for child in node:
       tmp = self.visit(child, level+1)
-      #child_num += tmp
-    
     return None
 
   def visit_Program(self, node, level):
-    #child_num = 0
     for child in node:
       tmp = self.visit(child, level)
-      #child_num += tmp
     return None
 
   def leaf_value_visit(self, node, level):
@@ -335,8 +303,6 @@ class MyVisitor():
       self.identifier_map.append(self.current_id_map)
       self.first_level_seq.append(self.node_order_list[index:])
       self.scripts.append(node.to_ecma())
-    #if self.display:
-    #  print "%s%d]" %(space, output_node.child_num)
     return rs
 
   def visit(self, node, level):
@@ -351,6 +317,33 @@ class MyVisitor():
     method = 'visit_%s' % node.__class__.__name__
     return getattr(self, method, self.generic_visit)(node, level)
 
+def analyzeJSCodesFinerBlock(script, display=False):
+  try:
+    parser = Parser()
+    script = script.strip()
+    if script.startswith('<!--') and script.endswith('-->'):
+      script = script[4: -3]
+    tree = parser.parse(script)
+    visitor = MyVisitor( display)
+    visitor.visit(tree, 0)
+    if len(visitor.first_level_seq) != len(visitor.scripts):
+      print >>sys.stderr, "error parsing script: scripts and seqs length inconsistent "+script[:100]
+      return None, None
+
+    return visitor.first_level_seq, visitor.scripts
+  except Exception as e:
+    print >>sys.stderr, "error parsing script: "+str(e)+" || [START]"+script[:100]+"[END]"
+    return None, None
+
+def analyzeJSON(script):
+  try:
+    obj = json.loads(script)
+    return obj
+  except Exception as e:
+    print >>sys.stderr, "error parsing json: "+str(e)+" "+script[:100]
+    return None
+
+@deprecated
 def analyzeJSCodes(script, display=False):
   try:
     parser = Parser()
@@ -363,42 +356,6 @@ def analyzeJSCodes(script, display=False):
     print >>sys.stderr, "error parsing script: "+str(e)+" || "+script
     return None
 
-def analyzeJSCodesFinerBlock(script, display=False):
-  try:
-    parser = Parser()
-    script = script.strip()
-    #get rid of HTML comments
-    if script.startswith('<!--') and script.endswith('-->'):
-      #print >>sys.stderr, "debug: modify commented scripts [START]"+script+" [END]"
-      script = script[4: -3]
-    tree = parser.parse(script)
-    #print tree.children()
-    visitor = MyVisitor( display)
-    visitor.visit(tree, 0)
-    if len(visitor.first_level_seq) != len(visitor.scripts):
-      print >>sys.stderr, "error parsing script: scripts and seqs length inconsistent "+script[:100]
-      return None, None
-
-    #for seq in visitor.first_level_seq:
-    #  for node in seq:
-    #    if node.tag == "Object":
-    #      print "OBJECT TYPE: ",node.value.__class__.__name__
-
-    return visitor.first_level_seq, visitor.scripts
-  except Exception as e:
-    print >>sys.stderr, "error parsing script: "+str(e)+" || [START]"+script[:100]+"[END]"
-    return None, None
-
-def analyzeJSON(script):
-  try:
-    obj = json.loads(script)
-    #rs = sorted(obj.keys())
-    #rs.insert(0, "JSON")
-    #return rs
-    return obj
-  except Exception as e:
-    print >>sys.stderr, "error parsing json: "+str(e)+" "+script[:100]
-    return None
 
 def main():
   #scripts = "for (var i=0; i<10; i++) { var x = {'a':i,'b':'AAAAA'}; " +\

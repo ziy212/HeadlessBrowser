@@ -1,16 +1,17 @@
-from handler import TemplateTree
-from handler import getTrees
-from handler import getTreesForDomainFromDB
-from handler import isSubTree
-from handler import fetchScriptsFromDB
-from handler import extractArrayValues
-from handler import extractObjectValues
-from strings import global_count
+from template import TemplateTree
+from template import getTrees
+from template import getTreesForDomainFromDB
+from template import isSubTree
+from template import extractArrayValues
+from template import extractObjectValues
 
-from ASTAnalyzer import analyzeJSCodes
-from ASTAnalyzer import analyzeJSCodesFinerBlock
-from ASTAnalyzer import analyzeJSON
-from ASTAnalyzer import ASTOutputNode
+from db_client import fetchScripts
+from node_pattern import global_count
+
+from script_analyzer import analyzeJSCodes
+from script_analyzer import analyzeJSCodesFinerBlock
+from script_analyzer import analyzeJSON
+from script_analyzer import ASTOutputNode
 from base64 import b64encode
 from base64 import b64decode
 import sys, os, re, json
@@ -23,7 +24,7 @@ def extractScriptsAndGenerateASTNodesFromURLList(url_path):
   for line in f:
     url = line.strip()
     print "process url "+url
-    hosts, inlines = fetchScriptsFromDB(url)
+    hosts, inlines = fetchScripts(url)
     if inlines==None or len(inlines) ==0:
       print "no inlines for "+url
       continue
