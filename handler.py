@@ -9,6 +9,7 @@ from script_analyzer import analyzeJSON
 from html_parser import traverseDOMTree
 from html_parser import getLDPairRepr
 from template import getTreesForDomainFromDB
+from template import TemplateTree
 from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
