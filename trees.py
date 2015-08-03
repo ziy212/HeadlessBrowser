@@ -66,7 +66,7 @@ def extractScriptsAndGenerateASTNodesFromURLListFinerBlock(path):
   for line in f:
     url = line.strip()
     print "process url "+url
-    hosts, inlines = fetchScriptsFromDB(url)
+    hosts, inlines = fetchScripts(url)
     if inlines==None or len(inlines) ==0:
       print "no inlines for "+url
       continue
@@ -232,7 +232,7 @@ def matchTreesFromDomainWithScriptsFromURLListS2(domain, url_list_path):
   for line in f:
     url = line.strip()
     print "process url "+url
-    hosts, inlines = fetchScriptsFromDB(url)
+    hosts, inlines = fetchScripts(url)
     if inlines==None or len(inlines) ==0:
       print "no inlines for "+url
       continue

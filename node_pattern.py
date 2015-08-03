@@ -379,6 +379,8 @@ def generateNodePattern(sample_list):
 def getEffectiveDomainFromURL(url):
   try:
     o = tldextract.extract(url.lower())
+    if o.domain == '':
+    	return None
     return o.domain + '.' + o.suffix
   except Exception as e:
     print >> sys.stderr, "error in getting getEffectiveDomain ", str(e)
