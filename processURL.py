@@ -1,6 +1,6 @@
 from urlparse import urlparse
 from urllib import unquote_plus
-import sys
+import sys,os
 import HTMLParser, tldextract
 html_parser = HTMLParser.HTMLParser()
 
