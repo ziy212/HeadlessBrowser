@@ -16,7 +16,18 @@ from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
 from bs4 import BeautifulSoup
-import sys, os, re, json, hashlib, uuid
+import sys, os, re, json, hashlib, uuid, logging
+
+
+logger = logging.getLogger('handler')
+hdlr = logging.FileHandler('./handler.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(formatter)
+logger.addHandler(hdlr) 
+logger.addHandler(consoleHandler)
+logger.setLevel(logging.DEBUG)
 
 ###################MATCH##############
 def compare(treedict, target_tree):
@@ -159,7 +170,7 @@ def extractAndStoreScriptsFromDOM(url, dom):
       new_item = item.encode('utf-8')
       host_list.append(new_item)
     except Exception as e:
-      displayErrorMsg('extractAndStoreScriptsFromDOM',\
+      logger.error('extractAndStoreScriptsFromDOM '+
         "decoding error: "+str(e))
       host_list.append(item)
 
@@ -168,10 +179,10 @@ def extractAndStoreScriptsFromDOM(url, dom):
       new_item = item.encode('utf-8')
       cont_list.append(new_item)
     except Exception as e:
-      displayErrorMsg('extractAndStoreScriptsFromDOM',\
+      logger.error('extractAndStoreScriptsFromDOM '+
         "decoding error: "+str(e))
       cont_list.append(item)
-  displayErrorMsg('extractAndStoreScriptsFromDOM',\
+  logger.info('extractAndStoreScriptsFromDOM '+\
     "extracted %d script hosts and %d inline scripts for %s " \
       %(len(host_list), len(cont_list), url))
 
