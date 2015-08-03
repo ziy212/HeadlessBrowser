@@ -90,7 +90,7 @@ taskWorker = (function (){
       sender.open(db_listener, 'post', data, json_header,
        function (status) {
         //page.render('github.png');
-        content = page.content.slice(0);
+      
         sender.close();
         sender = null;
         
@@ -102,7 +102,7 @@ taskWorker = (function (){
           err_task_count++;
           console.log("[FAIL] failed to send contents to DB; failed cases "+err_task_count);
         }
-        console.log("[SUCCEED] sent contents ["+contents.length+"] to db");
+        console.log("[SUCCEED] sent contents ["+data.length+"] to db");
         //
       });
     }
