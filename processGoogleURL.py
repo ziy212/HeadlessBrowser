@@ -73,8 +73,21 @@ def preProcessRegularURLLlist(main_url, url_list):
   return url_set
 
 def main():
+  #USAGE: file_name dst_folder_name
+  file_name = sys.argv[1].lower()
+  if not file_name.endswith('.txt'):
+    print "filename should be domain.txt"
+    return
+  domain = file_name[:-4]
+  full_dst_name = os.path.join(sys.argv[2], domain+'.txt')
+  train_dst_name = os.path.join(sys.argv[2], domain+'_train.txt')
+  test_dst_name = os.path.join(sys.argv[2], domain+'_test.txt')
+
   f = open(sys.argv[1])
-  fw = open(sys.argv[2],'w')
+  f_full = open(full_dst_name,'w')
+  f_train = open(train_dst_name, 'w')
+  f_test = open(test_dst_name, 'w')
+
   url_list = []
   for line in f:
     line = line.strip()
@@ -92,10 +105,19 @@ def main():
   
   url_set = preProcessRegularURLLlist(url_list[0], url_list)
   print "After processing, generating %d lines of urls" %(len(url_set))
+  count = 0
   for k in url_set:
-    fw.write(k+'\n')
+    count += 1
+    f_full.write(k+'\n')
+    if count < 2000:
+      f_train.write(k+'\n')
+    elif count <2500:
+      f_test.write(k+'\n')
+
   
-  fw.close()
+  f_full.close()
+  f_train.close()
+  f_test.close()
   f.close()
 
 if __name__=="__main__":
