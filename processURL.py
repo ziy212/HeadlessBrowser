@@ -74,7 +74,7 @@ def preProcessRegularURLLlist(main_url, url_list):
 
 def main():
   #USAGE: file_name dst_folder_name
-  file_name = sys.argv[1].lower()
+  file_name = os.path.basename(sys.argv[1].lower())
   if not file_name.endswith('.txt'):
     print "filename should be domain.txt"
     return
