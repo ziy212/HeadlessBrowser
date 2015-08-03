@@ -8,12 +8,14 @@ from script_analyzer import analyzeJSCodesFinerBlock
 from script_analyzer import analyzeJSON
 from html_parser import traverseDOMTree
 from html_parser import getLDPairRepr
+from html_parser import Node
 from template import getTreesForDomainFromDB
 from template import TemplateTree
 from node_pattern import global_count
 from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
+from bs4 import BeautifulSoup
 import sys, os, re, json, hashlib, uuid
 
 ###################MATCH##############

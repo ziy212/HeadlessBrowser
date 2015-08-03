@@ -2,8 +2,10 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.spiders import Spider
 from scrapy.http import Request
 
-DOMAIN = 'google.com'
+DOMAIN = 'taobao.com'
 URL = 'http://www.%s' % DOMAIN
+url='http://world.taobao.com/item/44235973193.htm'
+
 
 class MySpider(Spider):
     name = DOMAIN
