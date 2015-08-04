@@ -203,7 +203,7 @@ def main():
     worker_script_path = sys.argv[2]
 #task_queue, worker_count,
     #    timeout, user_agent, log_dir, worker_script_path
-    manager = Manager(queue, 5, 120, user_agent,log_dir,worker_script_path)
+    manager = Manager(queue, 10, 120, user_agent,log_dir,worker_script_path)
     manager.start()
     time.sleep(10)
     #queue.join()
