@@ -79,6 +79,7 @@ def main():
     print "filename should be domain.txt"
     return
   domain = file_name[:-4]
+  print domain
   full_dst_name = os.path.join(sys.argv[2], domain+'.txt')
   train_dst_name = os.path.join(sys.argv[2], domain+'_train.txt')
   test_dst_name = os.path.join(sys.argv[2], domain+'_test.txt')
@@ -93,7 +94,7 @@ def main():
     line = line.strip()
     url_list.append(line)
   print "Read %d lines of urls" %(len(url_list))
-
+  print 'main url: %s'%(url_list[0])
   '''
   #Google process
   url_dict = preProcessGoogleURLList(url_list)
