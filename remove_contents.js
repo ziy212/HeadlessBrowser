@@ -24,7 +24,9 @@ var standardizeURL = function (url) {
 
 };
 var arguments = process.argv.slice(2);
-var collection = db.get('contentscollection');
+var collection1 = db.get('contentscollection');
+var collection2 = db.get('inlinescripts');
+var collection3 = db.get('scripthosts');
 console.log(arguments[0]);
 
 fs.readFile(arguments[0], 'utf8', function (err,data) {
@@ -38,12 +40,27 @@ fs.readFile(arguments[0], 'utf8', function (err,data) {
   		continue;
   	}
   	//console.log(i+' '+url);
-  	collection.remove({url:url}, function(err, doc){
+  	var u = url;
+  	collection1.remove({url:url}, function(err, doc){
   		if (err){
-  			console.log('failed remove contents of '+url+' '+err);
+  			console.log('failed remove contents of '+u+' '+err);
   			return;
   		}
-  		console.log('succeed remove contents of '+url+ ' '+doc);
+  		console.log('succeed remove contents of '+u+ ' '+doc);
+  	});
+  	collection2.remove({url:url}, function(err, doc){
+  		if (err){
+  			console.log('failed remove inlines of '+u+' '+err);
+  			return;
+  		}
+  		console.log('succeed remove inlines of '+u+ ' '+doc);
+  	});
+  	collection3.remove({url:url}, function(err, doc){
+  		if (err){
+  			console.log('failed remove scripthosts of '+u+' '+err);
+  			return;
+  		}
+  		console.log('succeed remove scripthosts of '+u+ ' '+doc);
   	});
   }
 });
