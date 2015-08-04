@@ -48,6 +48,7 @@ fs.readFile(arguments[0], 'utf8', function (err,data) {
   		}
   		console.log('succeed remove contents of '+u+ ' '+doc);
   	});
+  	/*
   	collection2.remove({url:url}, function(err, doc){
   		if (err){
   			console.log('failed remove inlines of '+u+' '+err);
@@ -62,5 +63,6 @@ fs.readFile(arguments[0], 'utf8', function (err,data) {
   		}
   		console.log('succeed remove scripthosts of '+u+ ' '+doc);
   	});
+*/
   }
 });
