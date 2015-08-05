@@ -87,8 +87,8 @@ def matchScriptWithDomainTemplate(domain, script, treedict = None):
 
   if is_json:
     tree = TemplateTree(rs, None)
-    #if simpleCompare(treedict, tree):
-    if compare(treedict, tree):
+    if simpleCompare(treedict, tree):
+    #if compare(treedict, tree):
       allowed_sc.append(rs)
       print "JSON allowed "
     else:

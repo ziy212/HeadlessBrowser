@@ -2,9 +2,8 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.spiders import Spider
 from scrapy.http import Request
 
-DOMAIN = 'weibo.com'
-URL = 'http://www.%s' % DOMAIN
-URL = 'http://us.weibo.com/gb'
+DOMAIN = 'wordpress.com'
+URL = 'https://www.%s' % DOMAIN
 
 
 class MySpider(Spider):
