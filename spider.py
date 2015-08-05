@@ -2,7 +2,7 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.spiders import Spider
 from scrapy.http import Request
 
-DOMAIN = 'wordpress.com'
+DOMAIN = 'paypal.com'
 URL = 'https://www.%s' % DOMAIN
 
 
