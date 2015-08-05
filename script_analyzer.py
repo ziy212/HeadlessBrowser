@@ -1,5 +1,6 @@
 from slimit.parser import Parser
 from slimit.visitors import nodevisitor
+from ecmavisitor import ECMAVisitor
 from slimit import ast
 from db_client import fetchScripts
 from utilities import deprecated
@@ -317,6 +318,35 @@ class MyVisitor():
     method = 'visit_%s' % node.__class__.__name__
     return getattr(self, method, self.generic_visit)(node, level)
 
+##############TEST############
+class RewriteVisitor():
+  def __init__(self, display=True):
+    pass
+  
+  def generic_visit(self, node, level):
+    for child in node:
+      self.visit(child, level+1)
+
+  def visit_Object(self, node, level):
+    node.value = "CSP_Object"
+    for child in node:
+      self.visit(child, level+1)
+
+  def visit_Array(self, node, level):
+    node.value = "CSP_Array"
+    for child in node:
+      self.visit(child, level+1)
+    
+  def visit_String(self, node, level):
+    node.value = "CSP_String"
+  
+
+  def visit(self, node, level):
+
+    method = 'visit_%s' % node.__class__.__name__
+    return getattr(self, method, self.generic_visit)(node, level)
+##############END TEST########
+
 def analyzeJSCodesFinerBlock(script, display=False):
   try:
     parser = Parser()
@@ -356,12 +386,25 @@ def analyzeJSCodes(script, display=False):
     print >>sys.stderr, "error parsing script: "+str(e)+" || "+script
     return None
 
+def rewriteJSCodes(script, display=False):
+  try:
+    parser = Parser()
+    tree = parser.parse(script)
+    visitor = RewriteVisitor( display)
+    visitor.visit(tree, 0)
+    x = ECMAVisitor().visit(tree)
+    print x
+    #print tree.to_ecma()
+    #print "first_level_seq: %d" %len(visitor.first_level_seq)
+  except Exception as e:
+    print >>sys.stderr, "error parsing script: "+str(e)+" || "+script
+
 
 def main():
   #scripts = "for (var i=0; i<10; i++) { var x = {'a':i,'b':'AAAAA'}; " +\
   #          "var b = [{'a':1},{'b':'WW'}]} \n "+\
   #          "ma(123,'ddf'); ma('fff')"
-  '''
+  
   #compare scripts in a file
   f = open(sys.argv[1])
   scripts = []
@@ -373,12 +416,18 @@ def main():
   strings = []
   for script in scripts:
     count += 1
+    
+    l = rewriteJSCodes(script, False)
+    '''
     l = analyzeJSCodes(script, False)
     if l == None:
       continue
-    print len(l)
-    results.append(l)
+    for node in l:
+      print node.tag,
+    print 
+    '''
 
+  '''
   flag = True
   for i in range(len(results[0])):
     if not results[0][i] == results[1][i]:
@@ -399,7 +448,7 @@ def main():
   if flag:
     print "DOOD"
   '''
-  
+  '''
   #f = open(sys.argv[2])
   #script2 = f.read()
   #if script1 == script2:
@@ -435,7 +484,7 @@ def main():
     total += len(subtree_dict[key])
     print "dict: %s => %d times" %(key, len(subtree_dict[key]) )
   print "%d blocks of scripts in %d trees" %(total, len(subtree_dict))
-  
+  '''
   #print "common %d" %common
   #l2 = analyzeJSCodes(script2)
   #print len(l1), len(l2)
