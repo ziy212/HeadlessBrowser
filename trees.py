@@ -283,8 +283,8 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
       tree = TemplateTree(seq, None)
       key = tree.key
 
-      #if simpleCompare(treedict, tree):
-      if compare(treedict, tree):
+      if simpleCompare(treedict, tree):
+      #if compare(treedict, tree):
         allowed_sc.append(sc[index])
       else:
         failed_sc.append(sc[index])

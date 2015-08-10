@@ -129,6 +129,14 @@ taskWorker = (function (){
     page.settings.resourceTimeout = 5000;
     page.settings.userAgent = user_agent;
     
+    page.onConsoleMessage = function (msg) { console.log(msg); };
+    /** rewrite eval functions **/
+    page.onInitialized = function() {
+      console.log("[DEBUG] onInitialized");
+      page.injectJs('hook.js');
+    };
+    /****************************/
+
     page.onResourceRequested = function (req) {
       //console.log("request:"+req.url);
       request_count++;
