@@ -102,6 +102,7 @@ def matchScriptWithDomainTemplate(domain, script, treedict = None):
   allowed_sc = []
   failed_sc = []
 
+  t1 = time()
   if is_json:
     tree = TemplateTree(rs, None)
     if simpleCompare(treedict, tree):
@@ -125,6 +126,11 @@ def matchScriptWithDomainTemplate(domain, script, treedict = None):
         failed_sc.append(sc[index])
 
     print "allowed %d blocks, failed %d blocks" %(len(allowed_sc), len(failed_sc))
+  t2 = time()
+  total_time = t2 - t1
+  total_size = len(allowed_sc) + len(failed_sc)
+  avg_time = total_time / total_size
+  print "MATCH_TIME: %f %d" %(avg_time)  
   return allowed_sc, failed_sc
 
 

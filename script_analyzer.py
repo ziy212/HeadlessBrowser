@@ -4,7 +4,7 @@ from ecmavisitor import ECMAVisitor
 from slimit import ast
 from db_client import fetchScripts
 from utilities import deprecated
-import itertools, sys, json, copy, hashlib, os
+import itertools, sys, json, copy, hashlib, os,time
 
 '''
   Exports:
@@ -349,6 +349,7 @@ class RewriteVisitor():
 
 def analyzeJSCodesFinerBlock(script, display=False):
   try:
+    t1 = time.time()
     parser = Parser()
     script = script.strip()
     if script.startswith('<!--') and script.endswith('-->'):
@@ -359,6 +360,13 @@ def analyzeJSCodesFinerBlock(script, display=False):
     if len(visitor.first_level_seq) != len(visitor.scripts):
       print >>sys.stderr, "error parsing script: scripts and seqs length inconsistent "+script[:100]
       return None, None
+    t2 = time.time()
+    total_time = t2 - t1
+    total_len = float(len(script))
+    portion = [len(x)/total_len for x in visitor.scripts]
+    for i in range(len(portion)):
+      t = total_time * portion[i]
+      print "AST_TIME: %f %d" %(t, len(visitor.scripts[i]))    
 
     return visitor.first_level_seq, visitor.scripts
   except Exception as e:
