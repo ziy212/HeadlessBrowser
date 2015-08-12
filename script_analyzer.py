@@ -363,11 +363,13 @@ def analyzeJSCodesFinerBlock(script, display=False):
     t2 = time.time()
     total_time = t2 - t1
     total_len = float(len(script))
-    portion = [len(x)/total_len for x in visitor.scripts]
-    for i in range(len(portion)):
-      t = total_time * portion[i]
-      print "AST_TIME: %f %d" %(t, len(visitor.scripts[i]))    
-
+    try:
+      portion = [len(x)/total_len for x in visitor.scripts]
+      for i in range(len(portion)):
+        t = total_time * portion[i]
+        print "AST_TIME: %f %d" %(t, len(visitor.scripts[i]))    
+    except:
+      pass
     return visitor.first_level_seq, visitor.scripts
   except Exception as e:
     print >>sys.stderr, "error parsing script: "+str(e)+" || [START]"+script[:100]+"[END]"

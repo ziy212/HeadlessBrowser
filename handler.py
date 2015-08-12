@@ -130,8 +130,9 @@ def matchScriptWithDomainTemplate(domain, script, treedict = None):
   t2 = time()
   total_time = t2 - t1
   total_size = len(allowed_sc) + len(failed_sc)
-  avg_time = total_time / total_size
-  print "MATCH_TIME: %f " %(avg_time)  
+  if total_size != 0:
+    avg_time = total_time / total_size
+    print "MATCH_TIME: %f " %(avg_time)  
   return allowed_sc, failed_sc
 
 
