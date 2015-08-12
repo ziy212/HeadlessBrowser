@@ -16,7 +16,7 @@ from utilities import displayErrorMsg
 from base64 import b64encode
 from base64 import b64decode
 from bs4 import BeautifulSoup
-import sys, os, re, json, hashlib, uuid, logging
+import sys, os, re, json, hashlib, uuid, logging, time
 
 
 logger = logging.getLogger('handler')
