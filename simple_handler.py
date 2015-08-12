@@ -46,12 +46,6 @@ def matchScriptsFromURLFileWithDomainTemplate(domain, url_list_path):
     return None, None
   passed_sc = []
   failed_sc = []
-  passed_dict = {}
-  failed_dict = {}
-  f_pass = open('passlist','w') 
-  f_empty = open('emptylist','w') 
-  f_fail = open('faillist','w') 
-
   f = open(url_list_path)
   for line in f:
     url = line.strip()
@@ -59,26 +53,15 @@ def matchScriptsFromURLFileWithDomainTemplate(domain, url_list_path):
     hosts, inlines = fetchScripts(url)
     if inlines==None or len(inlines) ==0:
       print "no inlines for "+url
-      f_empty.write(url+'\n')
       continue
     for inline in inlines:
       passed, failed = matchScriptWithDomainTemplate(domain, inline, treedict)
-      if len(failed) == 0:
-        for fa in passed:
-          passed_dict[fa] = 1
-          f_pass.write(fa+'\n')
-      else:
-        for fa in failed:
-          failed_dict[fa] = 1
-          f_fail.write(fa+'\n')
       if passed == None:
         print "failed for inline [S] ", inline[:100],' [E]'
       else:
         passed_sc += passed
         failed_sc += failed
   rate = float(len(passed_sc))/float(len(passed_sc)+len(failed_sc))
-  rate2 = float(len(passed_dict))/float(len(passed_dict)+len(failed_dict))
-  print "passed %d; failed: %d; rate:%f" %(len(passed_dict), len(failed_dict), rate2)
   print "passed %d; failed: %d; rate:%f" %(len(passed_sc), len(failed_sc), rate)
   print "match details : ", str(global_count)
 
@@ -118,8 +101,8 @@ def matchScriptWithDomainTemplate(domain, script, treedict = None):
       tree = TemplateTree(seq, None)
       key = tree.key
 
-      #if simpleCompare(treedict, tree):
-      if compare(treedict, tree):
+      if simpleCompare(treedict, tree):
+      #if compare(treedict, tree):
         allowed_sc.append(sc[index])
       else:
         failed_sc.append(sc[index])

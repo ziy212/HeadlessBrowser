@@ -13,6 +13,7 @@ app.use(bodyParser({limit: '50mb'}));
 app.use(bodyParser.json() );
 
 var standardizeURL = function (url) {
+	return url;
 	try{
 		var url = querystring.unescape(url);
 		var o = urlParse.parse(url)
