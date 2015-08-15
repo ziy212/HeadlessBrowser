@@ -13,10 +13,13 @@ app.use(bodyParser({limit: '50mb'}));
 app.use(bodyParser.json() );
 
 var hostMap = {
-  "8087":"joomla3.com", "8088":"joomla4.com",
+  "8087":"joomla3.com", "8088":"joomla4.com","8101":"joomla2.com",
   "8085":"drupal7.com", "8086":"drupal6.com",
-  "8089":"concrete5.com", "8090":"concrete4.com",
-  "8083":"mybb8.com", "8084":"mybb6.com", "8091":"mybb84.com",
+  "9005":"wordpress0.com","9008":"wordpress1.com",
+  "8089":"concrete5.com", "8090":"concrete4.com","8095":"concrete0.com",
+  "8083":"mybb8.com", "8084":"mybb6.com", "8091":"mybb84.com","8094":"mybb0.com",
+  "9001":"getsimple6.com","9002":"getsimple5.com","9006":"getsimple0.com",
+  "9003":"silver13.com","9004":"silver12.com","9007":"silver0.com",
   "80":"phpbb0.com","8082":"phpbb1.com"};
 
 var standardizeURL = function (url) {

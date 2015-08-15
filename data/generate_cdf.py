@@ -86,35 +86,38 @@ def drawThreeDelayCDF(data_chicago,data_ec2,data_local,data_chicago2,data_ec22,d
     plt.show()
 
 
-def drawCDF2(data1):
+def drawCDF2(data1,data2):
     font = {'family' : 'normal',\
         'weight' : 'bold',\
-        'size'   : 22}
+        'size'   : 16}
     matplotlib.rc('font', **font)
-    params = {'legend.fontsize': 20, 'axes.labelsize':25}
+    params = {'legend.fontsize': 16, 'axes.labelsize':16}
     plt.rcParams.update(params)
     fig = plt.figure(1)
     ax1 = plt.subplot(111) 
-    [i.set_linewidth(6) for i in ax1.spines.itervalues()]
+    [i.set_linewidth(2) for i in ax1.spines.itervalues()]
     
     plt.xlim(0,31)
     data1 = np.sort(data1) 
-    #data2 = np.sort(data2) 
+    data2 = np.sort(data2) 
     #data3 = np.sort(data3) 
     yvals1=np.arange(len(data1))/float(len(data1))
+    yvals2=np.arange(len(data2))/float(len(data2))
     eighty_index = int(0.8 * len(data1))
     nighty_index = int(0.9 * len(data1))
     #yvals2=np.arange(len(data2))/float(len(data2))
     #yvals3=np.arange(len(data3))/float(len(data3))
     #plt.xlim(0.05,3)
     #plt.xscale('log')
-    plot1, = plt.plot(data1, yvals1,linewidth=6.0)
-    plot2, = plt.plot(data2, yvals2,'r--')
+    plot1, = plt.plot(data1, yvals1,linewidth=2.0)
+    plot2, = plt.plot(data2, yvals2,'r--', linewidth=2.0)
     #plot3, = plt.plot(data3, yvals3,'y--')
-    plt.ylabel("CDF")
-    #plt.yticks(yticks)
-    plt.xlabel("Loading time (s)")
-    #plt.legend([plot1,plot2,plot3], ["Chicago HoneyFarm", 'EC2 HoneyFarm',"Local HoneyFarm"],bbox_to_anchor=(0.8,0.25))
+    plt.ylabel("Percentage of Pages")
+    yticks = np.arange(0, 1.1, 0.1)
+    plt.yticks(yticks)
+    plt.grid()
+    plt.xlabel("Loading Time (s)")
+    plt.legend([plot1,plot2], ["With CSPAutoGen", 'Without CSPAutoGen'],bbox_to_anchor=(0.95,0.25))
     print "Eightyth %f "%data1[eighty_index]
     print "Nightyth %f "%data1[nighty_index]
 
@@ -124,8 +127,9 @@ def drawCDF2(data1):
 
 def main():
    
-    data = readData(sys.argv[1],max=300)
-    drawCDF2(data)
+    data1 = readData(sys.argv[1],max=300)
+    data2 = readData(sys.argv[2],max=300)
+    drawCDF2(data1,data2)
     #drawThreeDelayCDF(data1,data2,data3,data11,data22,data33)
     
     #drawCDF2(data)
