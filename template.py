@@ -275,7 +275,7 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
               total_uniq_script_blocks += 1
  
-  fw = open(os.path.join(dst_path,name+'debug'),'w')
+  fw = open(os.path.join(dst_path,'debug'),'w')
   for k in scriptdict:
     vals = scriptdict[k]
     print "%d %s " %(len(vals),k)
