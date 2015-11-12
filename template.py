@@ -275,7 +275,7 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
             print "  add key  %s" %key
           else:
             contents = [x[0] for x in scriptdict[key]]
-            debug_dict[key].append[sc[index]]
+            debug_dict[key].append(sc[index])
             if not sc[index] in contents: 
               scriptdict[key].append((sc[index],url, tree, index))
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
