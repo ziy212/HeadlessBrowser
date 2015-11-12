@@ -6,6 +6,7 @@ from script_analyzer import analyzeJSCodesFinerBlock
 from script_analyzer import analyzeJSON
 from script_analyzer import ASTOutputNode
 from node_pattern import NodePattern
+from node_pattern import StringType
 from node_pattern import generateNodePattern
 from utilities import displayErrorMsg
 from utilities import deprecated
@@ -228,6 +229,10 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
   scriptdict = {}
   total_script_blocks = 0
   total_uniq_script_blocks = 0
+
+  static_scripts = 0
+  dynamic_scripts = 0
+
   for line in f:
     url = line.strip()
     print "process url "+url
@@ -270,12 +275,20 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
               total_uniq_script_blocks += 1
  
+  fw = open(os.path.join(dst_path,name+'debug'),'w')
+  for k in scriptdict:
+    vals = scriptdict[k]
+    print "%d %s " %(len(vals),k)
+    for v in vals:
+      print "  -- %s" %v[0]
+  fw.close()
   #start to analyze trees
   #scriptdict[tree_key] = [(script, url, tree, index)]
   trees = []
   insufficient_urls = {}
   keys = sorted(scriptdict.keys(), key=lambda k:len(scriptdict[k]))
   for key in keys:
+    is_static = True
     name = "%d_%s" %(len(scriptdict[key]),key)
     fw = open(os.path.join(dst_path,name), 'w')
     for item in scriptdict[key]:
@@ -305,6 +318,7 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
     #script_list: [(script, url, tree, index)]
     fw.write("start analyzeing values\n")    
     script_length = len(script_list)
+
     for i in range(seq_length):
       node = script_list[0][2].nodes[i]
       try:
@@ -315,6 +329,11 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
           #fw.write(item+"\n")
           tree.strings[i] = vals
           node_pattern = generateNodePattern(vals)
+          if is_static and \
+            ((node_pattern.tp!=StringType.CONST) and (node_pattern.tp!=StringType.INSUFFICIENT)):
+            is_static = False
+            dynamic_scripts += script_length
+
           tree.string_types_str[str(i)] = node_pattern.dumps()
           if node_pattern.is_insufficient():
             if not key in insufficient_urls:
@@ -341,6 +360,11 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
           for k in rs:
             encoded_val = [b64encode(x) for x in rs[k]]
             node_pattern = generateNodePattern(rs[k])
+            if is_static and \
+              ((node_pattern.tp!=StringType.CONST) and (node_pattern.tp!=StringType.INSUFFICIENT)):
+              is_static = False
+              dynamic_scripts += script_length
+
             type_dict[k] = node_pattern.dumps()
             if node_pattern.is_insufficient():
               if not key in insufficient_urls:
@@ -367,6 +391,11 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
             encoded_val = [b64encode(x) for x in rs[k]]
             #fw.write("array%d: %s:%s\n" % (i, k, ','.join(encoded_val)) )
             node_pattern = generateNodePattern(rs[k])
+            if is_static and \
+              ((node_pattern.tp!=StringType.CONST) and (node_pattern.tp!=StringType.INSUFFICIENT)):
+              is_static = False
+              dynamic_scripts += script_length
+
             type_dict[k] = node_pattern.dumps()
             if node_pattern.is_insufficient():
               if not key in insufficient_urls:
@@ -389,6 +418,9 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
         displayErrorMsg("fetchAndProcessScriptsOfURLsFromFile",\
            "excpetion in analyzing node %d %s " %(i, str(e))) 
     
+    if is_static:
+      static_scripts += script_length
+
     print "Done writing %d items for file %s " %(len(scriptdict[key]), name)
     trees.append(tree)
     
@@ -414,6 +446,8 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
   fw_json.close()
   print "generate %d trees for %d scripts uniqe[%d]" \
     %(len(trees), total_script_blocks, total_uniq_script_blocks)
+
+  print "static_scripts:%d  dynamic_scripts:%d" %(static_scripts, dynamic_scripts)
 
   return insufficient_urls
 

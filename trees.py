@@ -4,9 +4,10 @@ from template import getTreesForDomainFromDB
 from template import isSubTree
 from template import extractArrayValues
 from template import extractObjectValues
-
+from db_client import fetchTrees
 from db_client import fetchScripts
 from node_pattern import global_count
+from node_pattern import StringType
 
 from script_analyzer import analyzeJSCodes
 from script_analyzer import analyzeJSCodesFinerBlock
@@ -292,12 +293,151 @@ def matchTreesFromDomainWithScript(domain, script, treedict = None):
     print "allowed %d blocks, failed %d blocks" %(len(allowed_sc), len(failed_sc))
   return allowed_sc, failed_sc
 
+def getTreesEvaluation(domain):
+  tree_strings = fetchTrees(domain)
+  if tree_strings == None:
+    return None
 
+  tree_dict = {} #{key : TemplateTree}
+  for key in tree_strings:
+    tree = TemplateTree(None, None)
+    try:
+      tree.loads(tree_strings[key])
+      tree_dict[key] = tree
+    except Exception as e:
+      displayErrorMsg("getTreesForDomainFromDB",str(e))
+  
+  return tree_dict  
+
+def evalTrees(domain):
+  tree_dict = getTreesEvaluation(domain)
+  print len(tree_dict)
+  tree_number = 0
+  node_number = 0
+  obj_number = 0
+  string_number = 0
+  array_number = 0
+  type_number = 0
+  dangers_number = 0
+  for key in tree_dict:
+    tree = tree_dict[key]
+    node_len = len(tree.nodes)
+    node_number += node_len
+
+    string_len = len(tree.string_types)
+    string_number += string_len
+    type_number += string_len
+
+    obj_len = len(tree.object_types)
+    obj_number += obj_len
+
+    array_len = len(tree.array_types)
+    array_number += array_len
+    #print 'nodes:%d, string:%d, object:%d, array:%d' \
+    #  %(node_len, string_len, obj_len, array_len)
+    for k in tree.string_types:
+      string = tree.string_types[k]
+      if (string.tp == StringType.OTHER) \
+        and (not string.val.alphanumeric) and (string.val.special_char_set)\
+        and (('%' in string.val.special_char_set) or \
+            (':' in string.val.special_char_set)):
+              
+        dangers_number += 1 
+    for kk in tree.object_types:
+      obj = tree.object_types[kk]
+      obj_key_len = len(obj)
+      type_number += obj_key_len
+      for k in obj:
+        if (obj[k].tp == StringType.OTHER )\
+          and (not obj[k].val.alphanumeric) and (obj[k].val.special_char_set)\
+          and (('%' in obj[k].val.special_char_set) or \
+            (':' in obj[k].val.special_char_set)):
+          dangers_number += 1
+    for kk in tree.array_types:
+      arr = tree.array_types[kk]
+      arr_key_len = len(arr)
+      #print '  arr_key: %d' %arr_key_len
+      type_number += arr_key_len
+      for k in arr:
+        if (arr[k].tp == StringType.OTHER) \
+          and (not arr[k].val.alphanumeric) and (arr[k].val.special_char_set)\
+          and (('%' in arr[k].val.special_char_set) or \
+            (':' in arr[k].val.special_char_set)):
+          dangers_number += 1
+  print "treeNumber:%d nodeNumber:%d stringNumber:%d arrNumber:%d objNumber:%d typeNumber:%d" \
+    %(tree_number, node_number, string_number, array_number, obj_number, type_number)
+  print "dangers: %d" %dangers_number
+
+
+def evalTrees2(domain):
+  tree_dict = getTreesEvaluation(domain)
+  print len(tree_dict)
+  tree_number = 0
+  node_number = 0
+  obj_number = 0
+  string_number = 0
+  array_number = 0
+  type_number = 0
+  dangers_number = 0
+
+  
+
+  for key in tree_dict:
+    tree = tree_dict[key]
+    node_len = len(tree.nodes)
+    node_number += node_len
+
+    string_len = len(tree.string_types)
+    string_number += string_len
+    type_number += string_len
+
+    obj_len = len(tree.object_types)
+    obj_number += obj_len
+
+    array_len = len(tree.array_types)
+    array_number += array_len
+    #print 'nodes:%d, string:%d, object:%d, array:%d' \
+    #  %(node_len, string_len, obj_len, array_len)
+    for k in tree.string_types:
+      string = tree.string_types[k]
+      if (string.tp == StringType.OTHER) \
+        and (not string.val.alphanumeric) and (string.val.special_char_set)\
+        and (('%' in string.val.special_char_set) or \
+            (':' in string.val.special_char_set)):
+              
+        dangers_number += 1 
+    for kk in tree.object_types:
+      obj = tree.object_types[kk]
+      obj_key_len = len(obj)
+      type_number += obj_key_len
+      for k in obj:
+        if (obj[k].tp == StringType.OTHER )\
+          and (not obj[k].val.alphanumeric) and (obj[k].val.special_char_set)\
+          and (('%' in obj[k].val.special_char_set) or \
+            (':' in obj[k].val.special_char_set)):
+          dangers_number += 1
+    for kk in tree.array_types:
+      arr = tree.array_types[kk]
+      arr_key_len = len(arr)
+      #print '  arr_key: %d' %arr_key_len
+      type_number += arr_key_len
+      for k in arr:
+        if (arr[k].tp == StringType.OTHER) \
+          and (not arr[k].val.alphanumeric) and (arr[k].val.special_char_set)\
+          and (('%' in arr[k].val.special_char_set) or \
+            (':' in arr[k].val.special_char_set)):
+          dangers_number += 1
+  print "treeNumber:%d nodeNumber:%d stringNumber:%d arrNumber:%d objNumber:%d typeNumber:%d" \
+    %(tree_number, node_number, string_number, array_number, obj_number, type_number)
+  print "dangers: %d" %dangers_number
 def main():
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #matchTreesWithScriptsFromURLList(sys.argv[1], sys.argv[2])
   #matchTreesFromDomainWithScriptsFromURLList(sys.argv[1], sys.argv[2])
-  matchTreesFromDomainWithScriptsFromURLListS2(sys.argv[1], sys.argv[2])
+  
+  #matchTreesFromDomainWithScriptsFromURLListS2(sys.argv[1], sys.argv[2])
+  evalTrees(sys.argv[1])
+  
   #getTrees(sys.argv[1])
   #rs = matchTreesFromDomainWithScript(sys.argv[1], open(sys.argv[2]).read())
   #for item in rs:
