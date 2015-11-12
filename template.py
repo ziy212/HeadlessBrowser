@@ -278,9 +278,9 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
   fw = open(os.path.join(dst_path,'debug'),'w')
   for k in scriptdict:
     vals = scriptdict[k]
-    print "%d %s " %(len(vals),k)
+    fw.write("%d %s \n" %(len(vals),k)) 
     for v in vals:
-      print "  -- %s" %v[0]
+      fw.write("  -- %s\n" %v[0])
   fw.close()
   #start to analyze trees
   #scriptdict[tree_key] = [(script, url, tree, index)]
