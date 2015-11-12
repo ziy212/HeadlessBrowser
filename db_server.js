@@ -13,12 +13,8 @@ app.use(bodyParser({limit: '50mb'}));
 app.use(bodyParser.json() );
 
 var hostMap = {
-<<<<<<< HEAD
   "8087":"joomla3.com", "8088":"joomla4.com",
   "10001":"wp43.com", 
-=======
-  "8087":"joomla3.com", "8088":"joomla4.com","8101":"joomla2.com",
->>>>>>> 4a4477c03d73f7abd3f0a0b7d98ad21f6bf7335d
   "8085":"drupal7.com", "8086":"drupal6.com",
   "9005":"wordpress0.com","9008":"wordpress1.com",
   "8089":"concrete5.com", "8090":"concrete4.com","8095":"concrete0.com",

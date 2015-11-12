@@ -18,6 +18,19 @@ Steps to train a website:
 8. train: mkdir tmp/domain; python template.py evaluation/urls/domain_train.txt tmp/domain
 9. test:  python handler.py domain evaluation/urls/domain_test.txt 
 
+=======CHECK SCRIPT================
+1. modify spider.py to give a domain name
+2. scrapy runspider spider.py > evaluation/tmp/`doman`.txt 	#crawl URL
+3. python processURL.py evaluation/tmp/`doman`.txt evaluation/urls/      #process URL list
+4. python send_get_req.py evaluation/urls/`domain`_train.txt    # render those URLs in headless browser
+   # request will be sent to phantom_manager to execute, wait it to finish
+   # screen -r manager # check if there is still task running
+5. mkdir ./tmp/`domain`; python template.py evaluation/urls/`domain`_train.txt ./tmp/`domain`
+6. read the contents of ./tmp/`domain`/debug
+   format: 
+     [number: key
+       --EXAMPLE-- exmpale]
+
 
 
 Some commands:
