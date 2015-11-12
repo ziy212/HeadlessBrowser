@@ -24,7 +24,7 @@ Steps to train a website:
 3. python processURL.py evaluation/tmp/`doman`.txt evaluation/urls/      #process URL list
 4. python send_get_req.py evaluation/urls/`domain`_train.txt    # render those URLs in headless browser
    # request will be sent to phantom_manager to execute, wait it to finish
-   # screen -r manager # check if there is still task running
+   # screen -r manager # check if there is still task running "no working process ..."
    # ctrl + A; D; to leave screen session
 5. python processScript.py evaluation/urls/`domain`_train.txt #extract script from pages
 6. mkdir ./tmp/`domain`; python template.py evaluation/urls/`domain`_train.txt ./tmp/`domain`
