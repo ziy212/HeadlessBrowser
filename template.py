@@ -229,6 +229,7 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
   scriptdict = {}
   total_script_blocks = 0
   total_uniq_script_blocks = 0
+  debug_dict = {}
 
   static_scripts = 0
   dynamic_scripts = 0
@@ -253,12 +254,15 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
         tree = TemplateTree(rs, None)
         if not tree.key in scriptdict:
           scriptdict[tree.key] = [(inline, url, tree, -1)]
+          debug_dict[tree.key] = [inline]
         else:
+          debug_dict[tree.key].append(inline)
           contents = [x[0] for x in scriptdict[key]]
           if not inline in contents:
             scriptdict[tree.key].append((inline, url, tree, -1))
             total_uniq_script_blocks += 1
         total_script_blocks += 1
+
       else:
         for index in range(len(rs)):
           total_script_blocks += 1
@@ -266,21 +270,22 @@ def generateTemplateBasedOnURLsFromFile(path, dst_path):
           tree = TemplateTree(seq, None)
           key = tree.key
           if not key in scriptdict:
+            debug_dict[key] = [sc[index]]
             scriptdict[key] = [(sc[index], url, tree, index)]
             print "  add key  %s" %key
           else:
             contents = [x[0] for x in scriptdict[key]]
+            debug_dict[key].append[sc[index]]
             if not sc[index] in contents: 
               scriptdict[key].append((sc[index],url, tree, index))
               print "  item %s has %d unique scripts" %(key, len(scriptdict[key]))
               total_uniq_script_blocks += 1
  
   fw = open(os.path.join(dst_path,'debug'),'w')
-  for k in scriptdict:
-    vals = scriptdict[k]
+  for k in debug_dict:
+    vals = debug_dict[k]
     fw.write("%d %s \n" %(len(vals),k)) 
-    for v in vals:
-      fw.write("  -- %s\n" %v[0])
+    fw.write("  --EXAMPLE-- %s\n" %vals[0])
   fw.close()
   #start to analyze trees
   #scriptdict[tree_key] = [(script, url, tree, index)]
