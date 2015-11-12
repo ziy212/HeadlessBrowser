@@ -26,8 +26,9 @@ Steps to train a website:
    # request will be sent to phantom_manager to execute, wait it to finish
    # screen -r manager # check if there is still task running
    # ctrl + A; D; to leave screen session
-5. mkdir ./tmp/`domain`; python template.py evaluation/urls/`domain`_train.txt ./tmp/`domain`
-6. read the contents of ./tmp/`domain`/debug
+5. python processScript.py evaluation/urls/`domain`_train.txt #extract script from pages
+6. mkdir ./tmp/`domain`; python template.py evaluation/urls/`domain`_train.txt ./tmp/`domain`
+7. read the contents of ./tmp/`domain`/debug
    An example is at ./tmp/pawprintpets/debug and its analysis is at ./tmp/pawprintpets/analysis
    format: 
      [number: key
