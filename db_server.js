@@ -14,6 +14,7 @@ app.use(bodyParser.json() );
 
 var hostMap = {
   "8087":"joomla3.com", "8088":"joomla4.com",
+  "10001":"wp43.com", 
   "8085":"drupal7.com", "8086":"drupal6.com",
   "8089":"concrete5.com", "8090":"concrete4.com",
   "8083":"mybb8.com", "8084":"mybb6.com", "8091":"mybb84.com",

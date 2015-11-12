@@ -2,9 +2,10 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.spiders import Spider
 from scrapy.http import Request
 
-DOMAIN = 'vizrt.com'
+DOMAIN = 'pawprintpets.com'
+DOMAIN = 'boardshorts.com'
 URL = 'http://www.%s' % DOMAIN
-URL = 'http://forum.vizrt.com/'
+URL = 'http://165.124.182.209:10001/'
 
 
 class MySpider(Spider):
